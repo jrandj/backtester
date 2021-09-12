@@ -1,8 +1,19 @@
 import backtrader as bt
 
-class FixedCommisionScheme(bt.CommInfoBase):
+
+class FixedCommissionScheme(bt.CommInfoBase):
     """
-    Simple fixed commission scheme for demo
+    TBC.
+
+    Attributes
+    ----------
+    TBC : TBC
+        TBC.
+
+    Methods
+    -------
+    TBC()
+        TBC.
     """
     params = (
         ('commission', .02),
@@ -11,4 +22,13 @@ class FixedCommisionScheme(bt.CommInfoBase):
     )
 
     def _getcommission(self, size, price, pseudoexec):
+        """TBC.
+
+        Parameters
+        ----------
+
+        Raises
+        ------
+
+        """
         return abs(size) * self.p.commission

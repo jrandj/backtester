@@ -3,15 +3,25 @@ from backtrader.feeds import PandasData
 
 class SignalData(PandasData):
     """
-    Define pandas DataFrame structure
+    TBC.
+
+    Attributes
+    ----------
+    TBC : TBC
+        TBC.
+
+    Methods
+    -------
+    TBC()
+        TBC.
     """
     OHLCV = ['open', 'high', 'low', 'close', 'volume']
-    cols = OHLCV + ['predicted']
+    cols = OHLCV
 
     # create lines
     lines = tuple(cols)
 
     # define parameters
     params = {c: -1 for c in cols}
-    params.update({'datetime': None})
+    params.update({'datetime': 0})
     params = tuple(params.items())

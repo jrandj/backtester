@@ -1,17 +1,10 @@
 # Backtester
 
-Stock-backtester is a Python application for testing trading strategies against historical data.
-
-Running stockbacktester.py will test the buying and selling of stocks based on strategy parameters. The strategy parameters for buy signals are defined using: 
-* Today's volume above the 20 day moving average volume.
-* Today's close price change compared to the previous day price change.
-
-The buy signal is intended to model accumulation (i.e. large volume increase with minimal price increase). 
-
-Sell signals are generated using:
-* Profit required for exiting the currently held position.
+Backtester is a Python application for testing trading strategies against historical data.
 
 ## Architecture
+
+## Data
 
 ## Output
 
