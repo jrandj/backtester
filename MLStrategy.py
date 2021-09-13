@@ -5,25 +5,55 @@ import csv
 
 class MLStrategy(bt.Strategy):
     """
-    TBC.
+    A class that contains the trading strategy.
 
     Attributes
     ----------
-    TBC : TBC
-        TBC.
+    params : tuple
+        Parameters for the strategy.
 
     Methods
     -------
-    TBC()
-        TBC.
+    log()
+        The logger for the strategy.
+    notify_order()
+        Provide a notification from the broker based on the order.
+    prenext()
+        The method used for data points before the minimum period of all data/indicators has been met.
+    next()
+        The method used for all remaining data points once the minimum period of all data/indicators has been met.
     """
-    params = (('n_positions', 10),
-              ('min_positions', 5),
-              ('verbose', False),
-              ('log_file', 'backtest.csv'))
+    # parameters for the strategy
+    params = (
+        # ('n_positions', 10),
+        # ('min_positions', 5),
+        ('verbose', True),
+        ('sma1', 50),
+        ('sma2', 200),
+        ('log_file', 'backtest.csv'))
+
+    def __init__(self):
+        """Create any indicators needed for the strategy.
+
+        Parameters
+        ----------
+
+        Raises
+        ------
+
+        """
+        self.inds = dict()
+
+        for i, d in enumerate(self.datas):
+            self.inds[d] = dict()
+            self.inds[d]['sma1'] = bt.indicators.SimpleMovingAverage(
+                d.close, period=self.params.sma1)
+            self.inds[d]['sma2'] = bt.indicators.SimpleMovingAverage(
+                d.close, period=self.params.sma2)
+            self.inds[d]['cross'] = bt.indicators.CrossOver(self.inds[d]['sma1'], self.inds[d]['sma2'])
 
     def log(self, txt, dt=None):
-        """Logger for the strategy.
+        """The logger for the strategy.
 
         Parameters
         ----------
@@ -33,12 +63,12 @@ class MLStrategy(bt.Strategy):
 
         """
         dt = dt or self.datas[0].datetime.datetime(0)
-        with Path(self.p.log_file).open('a') as f:
+        with Path(self.p.log_file).open('a', newline='', encoding='utf-8') as f:
             log_writer = csv.writer(f)
-            log_writer.writerow([dt.isoformat()] + txt.split(','))
+            log_writer.writerow([dt.isoformat()] + txt.split('~'))
 
     def notify_order(self, order):
-        """TBC.
+        """Provide a notification from the broker based on the order.
 
         Parameters
         ----------
@@ -50,8 +80,7 @@ class MLStrategy(bt.Strategy):
         if order.status in [order.Submitted, order.Accepted]:
             return
 
-        # Check if an order has been completed
-        # broker could reject order if not enough cash
+        # check if an order has been completed, broker could reject order if not enough cash
         if self.p.verbose:
             if order.status in [order.Completed]:
                 p = order.executed.price
@@ -63,11 +92,8 @@ class MLStrategy(bt.Strategy):
             elif order.status in [order.Canceled, order.Margin, order.Rejected]:
                 self.log(f'{order.data._name},Order Canceled/Margin/Rejected')
 
-    # bt calls prenext instead of next unless
-    # all datafeeds have current values
-    # => call next to avoid duplicating logic
     def prenext(self):
-        """TBC.
+        """The method used for data points before the minimum period of all data/indicators has been met.
 
         Parameters
         ----------
@@ -79,7 +105,7 @@ class MLStrategy(bt.Strategy):
         self.next()
 
     def next(self):
-        """TBC.
+        """The method used for all remaining data points once the minimum period of all data/indicators has been met.
 
         Parameters
         ----------
@@ -88,5 +114,23 @@ class MLStrategy(bt.Strategy):
         ------
 
         """
-        # Simply log the closing price of the series from the reference
-        self.log('Close, %.2f' % self.datas[0].close[0])
+        # log the closing price
+        for i, d in enumerate(self.datas):
+            # dt, dn = self.datetime.date(), d._name
+            # check if we are in the market already
+            if not self.getposition(d).size:
+                # buy if sma2 > sma1
+                if self.inds[d]['cross'][0] == 1:
+                    self.buy(data=d)
+                # sell if sma2 < sma1
+                # elif self.inds[d]['cross'][0] == -1:
+                    # self.sell(data=d)
+            # we are not in the market already
+            else:
+                if self.inds[d]['cross'][0] == 1:
+                    self.close(data=d)
+                    self.buy(data=d)
+                elif self.inds[d]['cross'][0] == -1:
+                    self.close(data=d)
+                    #self.sell(data=d)
+        # self.log('Close, %.2f' % self.datas[0].close[0])

@@ -10,6 +10,7 @@ from SignalData import SignalData
 from MLStrategy import MLStrategy
 from FixedCommissionScheme import FixedCommissionScheme
 
+
 def format_time(t):
     """TBC.
 
@@ -40,20 +41,24 @@ def main():
 
     # Create and Configure Cerebro Instance
     data = pd.read_hdf(config['data']['path'], 'table')
-    data = data.loc[data['ticker'] == 'NAB']
-    tickers = data['ticker'].unique()
+    tickers = ['NAB', 'CBA', 'BHP']
+    # tickers = ['ALL', 'ANZ', 'APT', 'BHP', 'CBA', 'CSL', 'FMG', 'GMG', 'MQG', 'NAB', 'NCM', 'REA', 'RIO']
+    # tickers = data['ticker'].unique()
 
     # Add input data
     for ticker in tickers:
-        bt_data = SignalData(dataname=data)
-        cerebro.adddata(bt_data, name=ticker)
+        ticker_data = data.loc[data['ticker'] == ticker]
+        cerebro.adddata(SignalData(dataname=ticker_data), name=ticker)
 
     # Run Strategy Backtest
     cerebro.addanalyzer(bt.analyzers.PyFolio, _name='pyfolio')
-    cerebro.addstrategy(MLStrategy, n_positions=25, min_positions=20,
-                        verbose=True, log_file='bt_log.csv')
+    # cerebro.addstrategy(MLStrategy, n_positions=25, min_positions=1,
+    #                     verbose=True, log_file='bt_log.csv')
+    cerebro.addstrategy(MLStrategy, verbose=True, log_file='bt_log.csv')
+    cerebro.addsizer(bt.sizers.PercentSizer, percents=10)
     start = time()
     results = cerebro.run()
+
     ending_value = cerebro.broker.getvalue()
     cerebro.plot()
     duration = time() - start
