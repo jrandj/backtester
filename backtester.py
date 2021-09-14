@@ -12,10 +12,12 @@ from FixedCommissionScheme import FixedCommissionScheme
 
 
 def format_time(t):
-    """TBC.
+    """Format the time in hh:mm:ss.
 
     Parameters
     ----------
+    t : float
+        A length of time in seconds.
 
     Raises
     ------
@@ -35,19 +37,23 @@ def main():
     sns.set_style('darkgrid')
     cerebro = bt.Cerebro()  # create a "Cerebro" instance
     cash = 10000
+    # Add broker commission
     comminfo = FixedCommissionScheme()
     cerebro.broker.addcommissioninfo(comminfo)
     cerebro.broker.setcash(cash)
 
     # Create and Configure Cerebro Instance
     data = pd.read_hdf(config['data']['path'], 'table')
-    tickers = ['NAB', 'CBA', 'BHP']
+    tickers = ['NAB', 'CBA']
+    # tickers = ['ZYUS']
     # tickers = ['ALL', 'ANZ', 'APT', 'BHP', 'CBA', 'CSL', 'FMG', 'GMG', 'MQG', 'NAB', 'NCM', 'REA', 'RIO']
-    # tickers = data['ticker'].unique()
+    # ZYUS
+    #tickers = data['ticker'].unique()
 
     # Add input data
     for ticker in tickers:
         ticker_data = data.loc[data['ticker'] == ticker]
+        print("adding ticker: " + ticker)
         cerebro.adddata(SignalData(dataname=ticker_data), name=ticker)
 
     # Run Strategy Backtest

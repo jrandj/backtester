@@ -3,18 +3,19 @@ import backtrader as bt
 
 class FixedCommissionScheme(bt.CommInfoBase):
     """
-    TBC.
+    A class that sets the commission for the broker.
 
     Attributes
     ----------
-    TBC : TBC
-        TBC.
+    params : tuple
+        Parameters for the commission scheme.
 
     Methods
     -------
-    TBC()
-        TBC.
+    _getcommission()
+        The method that provides the implementation for calculating the commission.
     """
+    # parameters for the commission scheme
     params = (
         ('commission', .02),
         ('stocklike', True),
@@ -22,7 +23,7 @@ class FixedCommissionScheme(bt.CommInfoBase):
     )
 
     def _getcommission(self, size, price, pseudoexec):
-        """TBC.
+        """The method that provides the implementation for calculating the commission..
 
         Parameters
         ----------

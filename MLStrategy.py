@@ -43,8 +43,9 @@ class MLStrategy(bt.Strategy):
 
         """
         self.inds = dict()
-
+        # add the indicators for each data feed
         for i, d in enumerate(self.datas):
+            print("i: " + str(i) + " d: " + str(d))
             self.inds[d] = dict()
             self.inds[d]['sma1'] = bt.indicators.SimpleMovingAverage(
                 d.close, period=self.params.sma1)
@@ -114,23 +115,26 @@ class MLStrategy(bt.Strategy):
         ------
 
         """
-        # log the closing price
         for i, d in enumerate(self.datas):
             # dt, dn = self.datetime.date(), d._name
+
             # check if we are in the market already
             if not self.getposition(d).size:
-                # buy if sma2 > sma1
+                # buy if sma1 > sma2
                 if self.inds[d]['cross'][0] == 1:
                     self.buy(data=d)
-                # sell if sma2 < sma1
+                # go short if sma1 < sma2 (commented out as not considering short selling)
                 # elif self.inds[d]['cross'][0] == -1:
-                    # self.sell(data=d)
-            # we are not in the market already
+                # self.sell(data=d)
+            # this means are are already have a position
             else:
+                # buy if sma1 > sma2, but we are already in so have to close the position
+                # it doesn't make sense to close and buy again (without short positions) - leave for now
                 if self.inds[d]['cross'][0] == 1:
                     self.close(data=d)
                     self.buy(data=d)
+                # close and go short if sma1 < sma2 (commented out as not considering short selling)
                 elif self.inds[d]['cross'][0] == -1:
                     self.close(data=d)
-                    #self.sell(data=d)
+                    # self.sell(data=d)
         # self.log('Close, %.2f' % self.datas[0].close[0])
