@@ -25,8 +25,6 @@ class MLStrategy(bt.Strategy):
     """
     # parameters for the strategy
     params = (
-        # ('n_positions', 10),
-        # ('min_positions', 5),
         ('verbose', True),
         ('sma1', 50),
         ('sma2', 200),
@@ -45,13 +43,12 @@ class MLStrategy(bt.Strategy):
         self.inds = dict()
         # add the indicators for each data feed
         for i, d in enumerate(self.datas):
-            print("i: " + str(i) + " d: " + str(d))
             self.inds[d] = dict()
             self.inds[d]['sma1'] = bt.indicators.SimpleMovingAverage(
                 d.close, period=self.params.sma1)
             self.inds[d]['sma2'] = bt.indicators.SimpleMovingAverage(
                 d.close, period=self.params.sma2)
-            self.inds[d]['cross'] = bt.indicators.CrossOver(self.inds[d]['sma1'], self.inds[d]['sma2'])
+            self.inds[d]['cross'] = bt.indicators.CrossOver(self.inds[d]['sma1'], self.inds[d]['sma2'], plot=False)
 
     def log(self, txt, dt=None):
         """The logger for the strategy.
@@ -93,18 +90,6 @@ class MLStrategy(bt.Strategy):
             elif order.status in [order.Canceled, order.Margin, order.Rejected]:
                 self.log(f'{order.data._name},Order Canceled/Margin/Rejected')
 
-    def prenext(self):
-        """The method used for data points before the minimum period of all data/indicators has been met.
-
-        Parameters
-        ----------
-
-        Raises
-        ------
-
-        """
-        self.next()
-
     def next(self):
         """The method used for all remaining data points once the minimum period of all data/indicators has been met.
 
@@ -128,13 +113,17 @@ class MLStrategy(bt.Strategy):
                 # self.sell(data=d)
             # this means are are already have a position
             else:
-                # buy if sma1 > sma2, but we are already in so have to close the position
-                # it doesn't make sense to close and buy again (without short positions) - leave for now
-                if self.inds[d]['cross'][0] == 1:
+                if self.inds[d]['cross'][0] == -1:
                     self.close(data=d)
-                    self.buy(data=d)
-                # close and go short if sma1 < sma2 (commented out as not considering short selling)
-                elif self.inds[d]['cross'][0] == -1:
-                    self.close(data=d)
-                    # self.sell(data=d)
+
+
+                # # buy if sma1 > sma2, but we are already in so have to close the position
+                # # it doesn't make sense to close and buy again (without short positions) - leave for now
+                # if self.inds[d]['cross'][0] == 1:
+                #     self.close(data=d)
+                #     self.buy(data=d)
+                # # close and go short if sma1 < sma2 (commented out as not considering short selling)
+                # elif self.inds[d]['cross'][0] == -1:
+                #     self.close(data=d)
+                #     # self.sell(data=d)
         # self.log('Close, %.2f' % self.datas[0].close[0])

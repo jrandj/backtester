@@ -3,25 +3,18 @@ from backtrader.feeds import PandasData
 
 class SignalData(PandasData):
     """
-    TBC.
+    A class that enables the use of pandas dataframes with cerebro.
 
     Attributes
     ----------
-    TBC : TBC
-        TBC.
+    params : dict
+        The column headers from the dataframe.
 
     Methods
     -------
-    TBC()
-        TBC.
+
     """
-    OHLCV = ['open', 'high', 'low', 'close', 'volume']
-    cols = OHLCV
-
-    # create lines
-    lines = tuple(cols)
-
-    # define parameters
+    cols = ['open', 'high', 'low', 'close', 'volume']
     params = {c: -1 for c in cols}
     params.update({'datetime': 0})
     params = tuple(params.items())
