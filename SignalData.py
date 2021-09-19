@@ -17,4 +17,3 @@ class SignalData(PandasData):
     params = {c: -1 for c in ['open', 'high', 'low', 'close', 'volume']}
     params.update({'datetime': 0})
     params = tuple(params.items())
-    print("hi")

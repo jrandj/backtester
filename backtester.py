@@ -1,3 +1,4 @@
+import os
 import warnings
 from time import time
 import numpy as np
@@ -7,7 +8,7 @@ import backtrader as bt
 import configparser
 
 from SignalData import SignalData
-from MLStrategy import MLStrategy
+from CrossoverStrategy import CrossoverStrategy
 from FixedCommissionScheme import FixedCommissionScheme
 
 
@@ -45,38 +46,37 @@ def main():
 
     # Create and Configure Cerebro Instance
     data = pd.read_hdf(config['data']['path'], 'table')
-    # tickers = ['VHT', 'AYS', '1AL']
-    # tickers = ['ACWOB']
-    # tickers = ['ZYUS']
-    # tickers = ['ALL', 'ANZ', 'APT', 'BHP', 'CBA', 'CSL', 'FMG', 'GMG', 'MQG', 'NAB', 'NCM', 'REA', 'RIO']
-    # ZYUS
-    tickers = data['ticker'].unique()
+    tickers = ['NAB', 'VHT', 'AYS', '1AL']
+    # tickers = data['ticker'].unique()
 
     # Add input data
     for i, ticker in enumerate(tickers):
-
-        ticker_data = data.loc[data['ticker'] == ticker].sort_values(by='date')
+        ticker_data = data.loc[data['ticker'] == ticker] #.sort_values(by='date')
         if ticker_data['date'].size > 200:
-            print("adding ticker: " + ticker)
+            print("Adding ticker: " + ticker)
             cerebro.adddata(SignalData(dataname=ticker_data), name=ticker)
-        # cerebro.datas[i].plotinfo.plot = False
+            # cerebro.datas[i].plotinfo.plot = False
         else:
-            print("Ignoring " + ticker)
+            print("Ignoring ticker: " + ticker)
 
     cerebro.addobservermulti(bt.observers.BuySell, barplot=True, bardist=0.0025)
     cerebro.addobserver(bt.observers.Broker)
-    # cerebro.addobservermulti(bt.observers.BuySell)
 
     # Run Strategy Backtest
     cerebro.addanalyzer(bt.analyzers.PyFolio, _name='pyfolio')
-    cerebro.addstrategy(MLStrategy, verbose=True, log_file='bt_log.csv')
-    # cerebro.addsizer(bt.sizers.PercentSizer, percents=int(100 / len(tickers)))
+
+    try:
+        os.remove('bt_log.csv')
+    except OSError:
+        pass
+
+    cerebro.addstrategy(CrossoverStrategy, verbose=True, log_file='bt_log.csv')
     cerebro.addsizer(bt.sizers.PercentSizer, percents=2)
     start = time()
     results = cerebro.run()  # runonce=False
 
     ending_value = cerebro.broker.getvalue()
-    # cerebro.plot(volume=False)
+    cerebro.plot(volume=False)
     duration = time() - start
 
     print(f'Final Portfolio Value: {ending_value:,.2f}')
