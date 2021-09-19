@@ -35,9 +35,9 @@ def main():
     pd.set_option('display.expand_frame_repr', False)
     np.random.seed(42)
     sns.set_style('darkgrid')
-    cerebro = bt.Cerebro()  # stdstats=False
+    cerebro = bt.Cerebro(stdstats=False)  # stdstats=False
 
-    cash = 10000
+    cash = 1000000
     # Add broker commission
     comminfo = FixedCommissionScheme()
     cerebro.broker.addcommissioninfo(comminfo)
@@ -45,7 +45,8 @@ def main():
 
     # Create and Configure Cerebro Instance
     data = pd.read_hdf(config['data']['path'], 'table')
-    # tickers = ['CBA', 'NAB']
+    # tickers = ['VHT', 'AYS', '1AL']
+    # tickers = ['ACWOB']
     # tickers = ['ZYUS']
     # tickers = ['ALL', 'ANZ', 'APT', 'BHP', 'CBA', 'CSL', 'FMG', 'GMG', 'MQG', 'NAB', 'NCM', 'REA', 'RIO']
     # ZYUS
@@ -53,20 +54,26 @@ def main():
 
     # Add input data
     for i, ticker in enumerate(tickers):
-        ticker_data = data.loc[data['ticker'] == ticker]
-        print("adding ticker: " + ticker)
-        cerebro.adddata(SignalData(dataname=ticker_data), name=ticker)
-        # cerebro.datas[i].plotinfo.plot = False
 
-    # cerebro.addobserver(bt.observers.Broker)
+        ticker_data = data.loc[data['ticker'] == ticker].sort_values(by='date')
+        if ticker_data['date'].size > 200:
+            print("adding ticker: " + ticker)
+            cerebro.adddata(SignalData(dataname=ticker_data), name=ticker)
+        # cerebro.datas[i].plotinfo.plot = False
+        else:
+            print("Ignoring " + ticker)
+
+    cerebro.addobservermulti(bt.observers.BuySell, barplot=True, bardist=0.0025)
+    cerebro.addobserver(bt.observers.Broker)
     # cerebro.addobservermulti(bt.observers.BuySell)
 
     # Run Strategy Backtest
     cerebro.addanalyzer(bt.analyzers.PyFolio, _name='pyfolio')
     cerebro.addstrategy(MLStrategy, verbose=True, log_file='bt_log.csv')
-    cerebro.addsizer(bt.sizers.PercentSizer, percents=int(100 / len(tickers)))
+    # cerebro.addsizer(bt.sizers.PercentSizer, percents=int(100 / len(tickers)))
+    cerebro.addsizer(bt.sizers.PercentSizer, percents=2)
     start = time()
-    results = cerebro.run()
+    results = cerebro.run()  # runonce=False
 
     ending_value = cerebro.broker.getvalue()
     # cerebro.plot(volume=False)

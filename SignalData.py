@@ -3,7 +3,7 @@ from backtrader.feeds import PandasData
 
 class SignalData(PandasData):
     """
-    A class that enables the use of pandas dataframes with cerebro.
+    A subclass of backtrader's PandasData class to define the fields that we will provide.
 
     Attributes
     ----------
@@ -14,7 +14,7 @@ class SignalData(PandasData):
     -------
 
     """
-    cols = ['open', 'high', 'low', 'close', 'volume']
-    params = {c: -1 for c in cols}
+    params = {c: -1 for c in ['open', 'high', 'low', 'close', 'volume']}
     params.update({'datetime': 0})
     params = tuple(params.items())
+    print("hi")
