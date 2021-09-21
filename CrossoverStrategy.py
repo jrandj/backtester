@@ -130,8 +130,8 @@ class CrossoverStrategy(bt.Strategy):
         ------
 
         """
-        # if self.p.verbose:
-        #     self.log('Cash: ' + str(self.broker.get_cash()) + ' Equity: ' + str(self.broker.get_fundvalue()))
+        if self.p.verbose:
+            self.log('Cash: ' + str(self.broker.get_cash()) + ' Equity: ' + str(self.broker.get_fundvalue()))
         # dt = self.datetime.date()
         for i, d in enumerate(self.datas):
             dn = d._name

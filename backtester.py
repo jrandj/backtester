@@ -1,11 +1,12 @@
 import os
 import warnings
-from time import time
+import time
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import backtrader as bt
 import configparser
+import quantstats as qs
 
 from SignalData import SignalData
 from CrossoverStrategy import CrossoverStrategy
@@ -46,12 +47,15 @@ def main():
 
     # Create and Configure Cerebro Instance
     data = pd.read_hdf(config['data']['path'], 'table')
-    tickers = ['NAB', 'VHT', 'AYS', '1AL']
+    benchmark_data = pd.read_csv(config['data']['benchmark'])
+    benchmark_data['date'] = pd.to_datetime(benchmark_data['date'])
+    cerebro.adddata(SignalData(dataname=benchmark_data), name='XJO')
+    tickers = ['CSR', 'NAB']
     # tickers = data['ticker'].unique()
 
     # Add input data
     for i, ticker in enumerate(tickers):
-        ticker_data = data.loc[data['ticker'] == ticker] #.sort_values(by='date')
+        ticker_data = data.loc[data['ticker'] == ticker]  # .sort_values(by='date')
         if ticker_data['date'].size > 200:
             print("Adding ticker: " + ticker)
             cerebro.adddata(SignalData(dataname=ticker_data), name=ticker)
@@ -61,9 +65,12 @@ def main():
 
     cerebro.addobservermulti(bt.observers.BuySell, barplot=True, bardist=0.0025)
     cerebro.addobserver(bt.observers.Broker)
+    cerebro.addobserver(bt.observers.Trades)
+    cerebro.addobserver(bt.observers.Benchmark, data=benchmark_data)
 
     # Run Strategy Backtest
     cerebro.addanalyzer(bt.analyzers.PyFolio, _name='pyfolio')
+
 
     try:
         os.remove('bt_log.csv')
@@ -72,26 +79,22 @@ def main():
 
     cerebro.addstrategy(CrossoverStrategy, verbose=True, log_file='bt_log.csv')
     cerebro.addsizer(bt.sizers.PercentSizer, percents=2)
-    start = time()
+    start = time.time()
     results = cerebro.run()  # runonce=False
 
     ending_value = cerebro.broker.getvalue()
     cerebro.plot(volume=False)
-    duration = time() - start
+    duration = time.time() - start
 
     print(f'Final Portfolio Value: {ending_value:,.2f}')
     print(f'Duration: {format_time(duration)}')
 
-    # pyfolio = results[0].analyzers.getbyname('pyfolio')
-    # pyfolio.get_pf_items()
-    # import pyfolio as pf
-    # pf.create_full_tear_sheet(
-    #     returns,
-    #     positions=positions,
-    #     transactions=transactions,
-    #     gross_lev=gross_lev,
-    #     live_start_date='2005-05-01',  # This date is sample specific
-    #     round_trips=True)
+    portfolio_stats = results[0].analyzers.getbyname('pyfolio')
+    returns, positions, transactions, gross_lev = portfolio_stats.get_pf_items()
+    returns.index = returns.index.tz_convert(None)
+    qs.reports.html(returns, output='stats-' + time.strftime("%Y%d%m-%H%M%S") + '.html', title='Strategy Performance')
+
+    # "fpldraft-results-" + time.strftime("%Y%d%m-%H%M%S") + ".html", "w"
 
 
 if __name__ == "__main__":
