@@ -1,7 +1,7 @@
 from backtrader.feeds import PandasData
 
 
-class SignalData(PandasData):
+class TickerData(PandasData):
     """
     A subclass of backtrader's PandasData class to define the fields that we will provide.
 
