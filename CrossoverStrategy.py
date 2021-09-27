@@ -29,7 +29,8 @@ class CrossoverStrategy(bt.Strategy):
         ('verbose', True),
         ('sma1', 50),
         ('sma2', 200),
-        ('log_file', 'backtest.csv'))
+        ('log_file', 'backtest.csv')
+    )
 
     def __init__(self):
         """Create any indicators needed for the strategy.
@@ -107,6 +108,10 @@ class CrossoverStrategy(bt.Strategy):
         elif order.status == order.Expired and self.p.verbose:
             self.log(f'{dn},Order Expired')
 
+    def start(self):
+        self.val_start = self.broker.get_cash()
+        self.time_start = self.datas[0].datetime.date(1)
+
     def prenext(self):
         """The method is used when all data points are not available.
         Very few (if any) periods will have data for every ticker.
@@ -148,3 +153,11 @@ class CrossoverStrategy(bt.Strategy):
                         self.o[d] = self.close(data=d)
                     else:
                         self.log('Cannot sell ' + dn + ' as I am not long')
+
+    def stop(self):
+        self.time_end = self.datas[0].datetime.date(0)
+        self.time_elapsed = self.time_end - self.time_start
+        print('Strategy CAGR: {:.3f}%'.format(
+            100 * ((self.broker.get_value() + self.broker.get_cash()) / self.val_start) ** (
+                    1 / (self.time_elapsed.days / 365)) - 100))
+        print('Strategy Portfolio Value: ' + str(self.broker.get_cash() + self.broker.get_value()))

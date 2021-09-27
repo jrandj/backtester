@@ -47,7 +47,7 @@ class Backtester:
         return f'{h:>02.0f}:{m:>02.0f}:{s:>02.0f}'
 
     @staticmethod
-    def global_settings(self):
+    def global_settings():
         """Format the time in hh:mm:ss.
 
         Parameters
@@ -87,19 +87,28 @@ class Backtester:
 
         """
         tickers = self.tickers.split(',')
+        # tickers = self.tickers
+        index = 0
         for i, ticker in enumerate(tickers):
             ticker_data = self.data.loc[self.data['ticker'] == ticker]  # .sort_values(by='date')
             if ticker_data['date'].size > 200:
                 print("Adding ticker: " + ticker)
                 self.cerebro.adddata(TickerData(dataname=ticker_data), name=ticker)
-                # cerebro.datas[i].plotinfo.plot = False
+                # self.cerebro.datas[index].plotinfo.plot = False
+                index = index + 1
             else:
                 print("Ignoring ticker: " + ticker)
 
-    def run_reports(self):
+
+    def run_strategy_reports(self):
         self.returns.index = self.returns.index.tz_convert(None)
-        qs.reports.html(self.returns, output='stats-' + time.strftime("%Y%d%m-%H%M%S") + '.html',
+        qs.reports.html(self.returns, output='strategy-stats-' + time.strftime("%Y%d%m-%H%M%S") + '.html',
                         title='Strategy Performance')
+
+    def run_benchmark_reports(self):
+        self.benchmark_returns.index = self.benchmark_returns.index.tz_convert(None)
+        qs.reports.html(self.benchmark_returns, output='benchmark-stats-' + time.strftime("%Y%d%m-%H%M%S") + '.html',
+                        title='Benchmark Performance')
 
     def run_benchmark(self):
         """Format the time in hh:mm:ss.
@@ -118,10 +127,11 @@ class Backtester:
         self.cerebro_benchmark.addobserver(bt.observers.Broker)
         self.cerebro_benchmark.addobserver(bt.observers.Trades)
         self.cerebro_benchmark.addanalyzer(bt.analyzers.PyFolio, _name='pyfolio')
-        self.cerebro_benchmark.addstrategy(Benchmark, verbose=True)
+        self.cerebro_benchmark.addstrategy(Benchmark, verbose=True, log_file='benchmark_log.csv')
         # self.cerebro_benchmark.addsizer(bt.sizers.PercentSizer, percents=100)
         results = self.cerebro_benchmark.run()  # runonce=False
-        # self.cerebro_benchmark.plot(volume=False)
+        if self.config['options']['plot'] == 'true':
+            self.cerebro_benchmark.plot(volume=False)
         return results
 
     def run_strategy(self):
@@ -141,14 +151,15 @@ class Backtester:
         self.cerebro.addobserver(bt.observers.Broker)
         self.cerebro.addobserver(bt.observers.Trades)
         self.cerebro.addanalyzer(bt.analyzers.PyFolio, _name='pyfolio')
-        self.cerebro.addstrategy(CrossoverStrategy, verbose=True, log_file='bt_log.csv')
+        self.cerebro.addstrategy(CrossoverStrategy, verbose=True, log_file='strategy_log.csv')
         self.cerebro.addsizer(bt.sizers.PercentSizer, percents=2)
         results = self.cerebro.run()  # runonce=False
-        # self.cerebro.plot(volume=False)
+        if self.config['options']['plot'] == 'true':
+            self.cerebro.plot(volume=False)
         return results
 
     @staticmethod
-    def prepare_log(self):
+    def prepare_log():
         """Format the time in hh:mm:ss.
 
         Parameters
@@ -159,7 +170,8 @@ class Backtester:
 
         """
         try:
-            os.remove('bt_log.csv')
+            os.remove('backtest_log.csv')
+            os.remove('strategy_log.csv')
         except OSError:
             pass
 
@@ -189,12 +201,14 @@ class Backtester:
         # Set initial configuration
         self.config = configparser.RawConfigParser()
         self.config.read('config.properties')
-        self.global_settings(self)
+        self.global_settings()
         self.cash = float(self.config['broker']['cash'])
         self.tickers = self.config['data']['tickers']
 
+
         # Import data
         self.data, self.benchmark_data = self.import_data()
+        # self.tickers = self.data['ticker'].unique()
 
         # Run the strategy
         self.cerebro = bt.Cerebro(stdstats=False)  # stdstats=False
@@ -203,7 +217,7 @@ class Backtester:
         self.strategy_results = self.run_strategy()
         self.portfolio_stats = self.strategy_results[0].analyzers.getbyname('pyfolio')
         self.returns, self.positions, self.transactions, self.gross_lev = self.portfolio_stats.get_pf_items()
-        self.run_reports()
+        self.run_strategy_reports()
         self.ending_value = self.cerebro.broker.getvalue()
 
         # Run the benchmark
@@ -211,18 +225,17 @@ class Backtester:
         self.benchmark_comminfo = FixedCommissionScheme()
         self.cerebro_benchmark.broker.set_coc(True)
         self.benchmark_results = self.run_benchmark()
-        self.returns, self.positions, self.transactions, self.gross_lev = self.portfolio_stats.get_pf_items()
-        # self.run_reports()
+        self.benchmark_stats = self.benchmark_results[0].analyzers.getbyname('pyfolio')
+        self.benchmark_returns, self.benchmark_positions, self.benchmark_transactions, self.benchmark_gross_lev = self.benchmark_stats.get_pf_items()
+        self.run_benchmark_reports()
         self.benchmark_ending_value = self.cerebro_benchmark.broker.getvalue()
-        print("done")
 
 
 def main():
     start = time.time()
     backtester = Backtester()
     duration = time.time() - start
-    print(f'Final Portfolio Value: {backtester.ending_value:,.2f}')
-    print(f'Duration: {backtester.format_time(duration)}')
+    print(f'Runtime: {backtester.format_time(duration)}')
 
 
 if __name__ == "__main__":
