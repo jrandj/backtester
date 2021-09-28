@@ -46,6 +46,28 @@ class Backtester:
         h, m = divmod(m_, 60)
         return f'{h:>02.0f}:{m:>02.0f}:{s:>02.0f}'
 
+    def saveplots(cerebro, numfigs=1, iplot=True, start=None, end=None, width=16, height=9, dpi=300, tight=True,
+                  use=None, file_path='', **kwargs):
+
+        from backtrader import plot
+        if cerebro.p.oldsync:
+            plotter = plot.Plot_OldSync(**kwargs)
+        else:
+            plotter = plot.Plot(**kwargs)
+
+        figs = []
+        for stratlist in cerebro.runstrats:
+            for si, strat in enumerate(stratlist):
+                rfig = plotter.plot(strat, figid=si * 100,
+                                    numfigs=numfigs, iplot=iplot,
+                                    start=start, end=end, use=use)
+                figs.append(rfig)
+
+        for fig in figs:
+            for f in fig:
+                f.savefig(file_path, bbox_inches='tight')
+        return figs
+
     @staticmethod
     def global_settings():
         """Format the time in hh:mm:ss.
@@ -86,8 +108,8 @@ class Backtester:
         ------
 
         """
-        tickers = self.tickers.split(',')
-        # tickers = self.tickers
+        # tickers = self.tickers.split(',')
+        tickers = self.tickers
         index = 0
         for i, ticker in enumerate(tickers):
             ticker_data = self.data.loc[self.data['ticker'] == ticker]  # .sort_values(by='date')
@@ -98,7 +120,6 @@ class Backtester:
                 index = index + 1
             else:
                 print("Ignoring ticker: " + ticker)
-
 
     def run_strategy_reports(self):
         self.returns.index = self.returns.index.tz_convert(None)
@@ -130,7 +151,7 @@ class Backtester:
         self.cerebro_benchmark.addstrategy(Benchmark, verbose=True, log_file='benchmark_log.csv')
         # self.cerebro_benchmark.addsizer(bt.sizers.PercentSizer, percents=100)
         results = self.cerebro_benchmark.run()  # runonce=False
-        if self.config['options']['plot'] == 'true':
+        if self.config['options']['plot'] == 'True':
             self.cerebro_benchmark.plot(volume=False)
         return results
 
@@ -141,7 +162,7 @@ class Backtester:
         ----------
 
         Raises
-        ------
+        ------E
 
         """
         self.cerebro.broker.addcommissioninfo(self.comminfo)
@@ -154,7 +175,7 @@ class Backtester:
         self.cerebro.addstrategy(CrossoverStrategy, verbose=True, log_file='strategy_log.csv')
         self.cerebro.addsizer(bt.sizers.PercentSizer, percents=2)
         results = self.cerebro.run()  # runonce=False
-        if self.config['options']['plot'] == 'true':
+        if self.config['options']['plot'] == 'True':
             self.cerebro.plot(volume=False)
         return results
 
@@ -170,7 +191,10 @@ class Backtester:
 
         """
         try:
-            os.remove('backtest_log.csv')
+            os.remove('benchmark_log.csv')
+        except OSError:
+            pass
+        try:
             os.remove('strategy_log.csv')
         except OSError:
             pass
@@ -203,12 +227,15 @@ class Backtester:
         self.config.read('config.properties')
         self.global_settings()
         self.cash = float(self.config['broker']['cash'])
-        self.tickers = self.config['data']['tickers']
-
+        self.bulk = self.config['data']['bulk']
+        self.prepare_log()
 
         # Import data
         self.data, self.benchmark_data = self.import_data()
-        # self.tickers = self.data['ticker'].unique()
+        if self.bulk == 'True':
+            self.tickers = self.data['ticker'].unique()
+        else:
+            self.tickers = self.config['data']['tickers'].split(',')
 
         # Run the strategy
         self.cerebro = bt.Cerebro(stdstats=False)  # stdstats=False

@@ -9,22 +9,32 @@ class Benchmark(bt.Strategy):
 
     Attributes
     ----------
-    roi : TBC
+    params : TBC
+        TBC.
+    val_start : TBC
+        TBC.
+    time_start : TBC
+        TBC.
+    time_end : TBC
+        TBC.
+    time_elapsed : TBC
         TBC.
 
     Methods
     -------
     log()
         The logger for the strategy.
+    start()
+        Runs when the strategy starts. Record the initial value of cash and the date.
+    nextstart()
+        Runs exactly once when the minimum period has been met. Buy the index with all cash.
     notify_order()
         Handle orders and provide a notification from the broker based on the order.
-    prenext()
-        The method is used when all data points are not available.
-        Very few (if any) periods will have data for every ticker.
     next()
         The method used for all remaining data points once the minimum period of all data/indicators has been met.
+    stop()
+        Runs when the strategy stops. Record the final value of the portfolio and calculate the CAGR.
     """
-
     params = (
         ('verbose', True),
         ('log_file', 'benchmark.csv'))
@@ -45,10 +55,28 @@ class Benchmark(bt.Strategy):
             log_writer.writerow([dt.isoformat()] + txt.split('~'))
 
     def start(self):
+        """Runs when the strategy starts. Record the initial value of cash and the date.
+
+        Parameters
+        ----------
+
+        Raises
+        ------
+
+        """
         self.val_start = self.broker.get_cash()
         self.time_start = self.datas[0].datetime.date(1)
 
     def nextstart(self):
+        """Runs exactly once when the minimum period has been met. Buy the index with all cash.
+
+        Parameters
+        ----------
+
+        Raises
+        ------
+
+        """
         size = int(self.broker.get_cash() / self.data)
         self.buy(size=size)
 
@@ -90,9 +118,19 @@ class Benchmark(bt.Strategy):
             self.log(f'{dn},Order Expired')
 
     def stop(self):
+        """Runs when the strategy stops. Record the final value of the portfolio and calculate the CAGR.
+
+        Parameters
+        ----------
+
+        Raises
+        ------
+
+        """
         self.time_end = self.datas[0].datetime.date(0)
         self.time_elapsed = self.time_end - self.time_start
+        self.val_end = self.broker.get_value() + self.broker.get_cash()
         print('Benchmark CAGR: {:.3f}%'.format(
-            100 * ((self.broker.get_value() + self.broker.get_cash()) / self.val_start) ** (
+            100 * (self.val_end / self.val_start) ** (
                     1 / (self.time_elapsed.days / 365)) - 100))
-        print('Benchmark Portfolio Value: ' + str(self.broker.get_cash() + self.broker.get_value()))
+        print('Benchmark Portfolio Value: ' + str(self.val_end))

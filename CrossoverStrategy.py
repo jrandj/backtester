@@ -29,7 +29,7 @@ class CrossoverStrategy(bt.Strategy):
         ('verbose', True),
         ('sma1', 50),
         ('sma2', 200),
-        ('log_file', 'backtest.csv')
+        ('log_file', 'strategy.csv')
     )
 
     def __init__(self):
