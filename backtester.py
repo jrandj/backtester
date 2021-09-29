@@ -46,28 +46,6 @@ class Backtester:
         h, m = divmod(m_, 60)
         return f'{h:>02.0f}:{m:>02.0f}:{s:>02.0f}'
 
-    def saveplots(cerebro, numfigs=1, iplot=True, start=None, end=None, width=16, height=9, dpi=300, tight=True,
-                  use=None, file_path='', **kwargs):
-
-        from backtrader import plot
-        if cerebro.p.oldsync:
-            plotter = plot.Plot_OldSync(**kwargs)
-        else:
-            plotter = plot.Plot(**kwargs)
-
-        figs = []
-        for stratlist in cerebro.runstrats:
-            for si, strat in enumerate(stratlist):
-                rfig = plotter.plot(strat, figid=si * 100,
-                                    numfigs=numfigs, iplot=iplot,
-                                    start=start, end=end, use=use)
-                figs.append(rfig)
-
-        for fig in figs:
-            for f in fig:
-                f.savefig(file_path, bbox_inches='tight')
-        return figs
-
     @staticmethod
     def global_settings():
         """Format the time in hh:mm:ss.
@@ -162,7 +140,7 @@ class Backtester:
         ----------
 
         Raises
-        ------E
+        ------
 
         """
         self.cerebro.broker.addcommissioninfo(self.comminfo)
@@ -180,7 +158,7 @@ class Backtester:
         return results
 
     @staticmethod
-    def prepare_log():
+    def clean_logs():
         """Format the time in hh:mm:ss.
 
         Parameters
@@ -218,7 +196,7 @@ class Backtester:
         data = data[(data['date'] > comparison_start) & (data['date'] < comparison_end)]
         benchmark_data = benchmark_data[
             (benchmark_data['date'] > comparison_start) & (benchmark_data['date'] < comparison_end)]
-        print("Discarding data before " + str(comparison_start) + " and after " + str(comparison_end))
+        print("Discarding data before " + str(comparison_start.date()) + " and after " + str(comparison_end.date()))
         return data, benchmark_data
 
     def __init__(self):
@@ -228,7 +206,8 @@ class Backtester:
         self.global_settings()
         self.cash = float(self.config['broker']['cash'])
         self.bulk = self.config['data']['bulk']
-        self.prepare_log()
+        self.reports = self.config['options']['reports']
+        self.clean_logs()
 
         # Import data
         self.data, self.benchmark_data = self.import_data()
@@ -244,7 +223,8 @@ class Backtester:
         self.strategy_results = self.run_strategy()
         self.portfolio_stats = self.strategy_results[0].analyzers.getbyname('pyfolio')
         self.returns, self.positions, self.transactions, self.gross_lev = self.portfolio_stats.get_pf_items()
-        self.run_strategy_reports()
+        if self.reports == 'True':
+            self.run_strategy_reports()
         self.ending_value = self.cerebro.broker.getvalue()
 
         # Run the benchmark
@@ -254,7 +234,8 @@ class Backtester:
         self.benchmark_results = self.run_benchmark()
         self.benchmark_stats = self.benchmark_results[0].analyzers.getbyname('pyfolio')
         self.benchmark_returns, self.benchmark_positions, self.benchmark_transactions, self.benchmark_gross_lev = self.benchmark_stats.get_pf_items()
-        self.run_benchmark_reports()
+        if self.reports == 'True':
+            self.run_benchmark_reports()
         self.benchmark_ending_value = self.cerebro_benchmark.broker.getvalue()
 
 

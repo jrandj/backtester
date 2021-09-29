@@ -9,23 +9,25 @@ class Benchmark(bt.Strategy):
 
     Attributes
     ----------
-    params : TBC
-        TBC.
-    val_start : TBC
-        TBC.
-    time_start : TBC
-        TBC.
-    time_end : TBC
-        TBC.
-    time_elapsed : TBC
-        TBC.
+    params : tuple
+        The local parameters for the strategy.
+    start_val : float
+        The starting value of the strategy.
+    end_val : float
+        The ending value of the strategy.
+    start_date : datetime.date
+        The starting date of the strategy.
+    end_date : datetime.date
+        The ending date of the strategy.
+    elapsed_days : int
+        The amount of days between the start and end date.
+    cagr : float
+        The Compound Annual Growth Rate (CAGR) for the strategy.
 
     Methods
     -------
     log()
         The logger for the strategy.
-    start()
-        Runs when the strategy starts. Record the initial value of cash and the date.
     nextstart()
         Runs exactly once when the minimum period has been met. Buy the index with all cash.
     notify_order()
@@ -37,35 +39,25 @@ class Benchmark(bt.Strategy):
     """
     params = (
         ('verbose', True),
-        ('log_file', 'benchmark.csv'))
+        ('log_file', 'benchmark.csv')
+    )
 
-    def log(self, txt, dt=None):
+    def log(self, txt):
         """The logger for the strategy.
 
         Parameters
         ----------
+        txt : str
+            The text to be logged.
 
         Raises
         ------
 
         """
-        dt = dt or self.datas[0].datetime.datetime(0)
+        dt = self.datas[0].datetime.datetime(0)
         with Path(self.p.log_file).open('a', newline='', encoding='utf-8') as f:
             log_writer = csv.writer(f)
             log_writer.writerow([dt.isoformat()] + txt.split('~'))
-
-    def start(self):
-        """Runs when the strategy starts. Record the initial value of cash and the date.
-
-        Parameters
-        ----------
-
-        Raises
-        ------
-
-        """
-        self.val_start = self.broker.get_cash()
-        self.time_start = self.datas[0].datetime.date(1)
 
     def nextstart(self):
         """Runs exactly once when the minimum period has been met. Buy the index with all cash.
@@ -77,6 +69,8 @@ class Benchmark(bt.Strategy):
         ------
 
         """
+        self.start_val = self.broker.get_cash()
+        self.start_date = self.datas[0].datetime.date(1)
         size = int(self.broker.get_cash() / self.data)
         self.buy(size=size)
 
@@ -85,6 +79,8 @@ class Benchmark(bt.Strategy):
 
         Parameters
         ----------
+        order : backtrader.order.BuyOrder
+            The order object.
 
         Raises
         ------
@@ -127,10 +123,10 @@ class Benchmark(bt.Strategy):
         ------
 
         """
-        self.time_end = self.datas[0].datetime.date(0)
-        self.time_elapsed = self.time_end - self.time_start
-        self.val_end = self.broker.get_value() + self.broker.get_cash()
-        print('Benchmark CAGR: {:.3f}%'.format(
-            100 * (self.val_end / self.val_start) ** (
-                    1 / (self.time_elapsed.days / 365)) - 100))
-        print('Benchmark Portfolio Value: ' + str(self.val_end))
+        self.end_date = self.datas[0].datetime.date(0)
+        self.elapsed_days = (self.end_date - self.start_date).days
+        self.end_val = self.broker.get_value() + self.broker.get_cash()
+        self.cagr = 100 * (self.end_val / self.start_val) ** (
+                1 / (self.elapsed_days / 365)) - 100
+        print('Benchmark CAGR: {:.3f}%'.format(self.cagr))
+        print('Benchmark Portfolio Value: ' + str(self.end_val))
