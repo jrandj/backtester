@@ -187,11 +187,17 @@ class Backtester:
         ------
 
         """
-        data = pd.read_hdf(self.config['data']['path'], 'table').sort_values(by='date', ascending=True)
+        data = pd.read_hdf(self.config['data']['path'], 'table')  # .sort_values(by=['date', 'ticker'], ascending=True)
         benchmark_data = pd.read_csv(self.config['data']['benchmark'], parse_dates=['date'],
-                                     dayfirst=True).sort_values(by='date', ascending=True)
+                                     dayfirst=True)  # .sort_values(by='date', ascending=True)
         comparison_start = max(data['date'].min(), benchmark_data['date'].min())
         comparison_end = min(data['date'].max(), benchmark_data['date'].max())
+
+        # allow override from config
+        if len(self.start_date) > 0 and pd.to_datetime(self.start_date) < comparison_end:
+            comparison_start = pd.to_datetime(self.start_date)
+        if len(self.end_date) > 0 and pd.to_datetime(self.end_date) > comparison_start:
+            comparison_end = pd.to_datetime(self.end_date)
 
         data = data[(data['date'] > comparison_start) & (data['date'] < comparison_end)]
         benchmark_data = benchmark_data[
@@ -207,6 +213,8 @@ class Backtester:
         self.cash = float(self.config['broker']['cash'])
         self.bulk = self.config['data']['bulk']
         self.reports = self.config['options']['reports']
+        self.start_date = self.config['data']['start_date']
+        self.end_date = self.config['data']['end_date']
         self.clean_logs()
 
         # Import data

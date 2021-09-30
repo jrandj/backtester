@@ -161,3 +161,34 @@ class CrossoverStrategy(bt.Strategy):
             100 * ((self.broker.get_value() + self.broker.get_cash()) / self.val_start) ** (
                     1 / (self.time_elapsed.days / 365)) - 100))
         print('Strategy Portfolio Value: ' + str(self.broker.get_cash() + self.broker.get_value()))
+
+    # def notify_trade(self, trade):
+    #     print("I'm notifying trade!")
+    #     if not trade.isclosed:
+    #         return
+    #     self.log('OPERATION PROFIT, GROSS {}, NET{}'.format(trade.pnl,
+    #                                                         trade.pnlcomm))
+
+    def notify_trade(self, trade):
+        """TBC.
+
+        Parameters
+        ----------
+
+        Raises
+        ------
+
+        """
+        if trade.isclosed:
+            # self.log(
+            #     "{} Closed: PnL Gross {}, Net {},".format(
+            #         trade.data._name,
+            #         round(trade.pnl, 2),
+            #         round(trade.pnlcomm, 1),
+            #     )
+            print("{} Closed: PnL Gross {}, Net {},".format(
+                # print(trade.data._name)
+                trade.data._name,
+                round(trade.pnl, 2),
+                round(trade.pnlcomm, 1)))
+            print("finished!")

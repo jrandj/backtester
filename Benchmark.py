@@ -42,19 +42,21 @@ class Benchmark(bt.Strategy):
         ('log_file', 'benchmark.csv')
     )
 
-    def log(self, txt):
+    def log(self, txt, dt=None):
         """The logger for the strategy.
 
         Parameters
         ----------
         txt : str
             The text to be logged.
+        dt : NoneType
+            The datetime.
 
         Raises
         ------
 
         """
-        dt = self.datas[0].datetime.datetime(0)
+        dt = dt or self.datas[0].datetime.datetime(0)
         with Path(self.p.log_file).open('a', newline='', encoding='utf-8') as f:
             log_writer = csv.writer(f)
             log_writer.writerow([dt.isoformat()] + txt.split('~'))
