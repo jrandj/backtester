@@ -32,8 +32,6 @@ class Benchmark(bt.Strategy):
         Runs exactly once when the minimum period has been met. Buy the index with all cash.
     notify_order()
         Handle orders and provide a notification from the broker based on the order.
-    next()
-        The method used for all remaining data points once the minimum period of all data/indicators has been met.
     stop()
         Runs when the strategy stops. Record the final value of the portfolio and calculate the CAGR.
     """

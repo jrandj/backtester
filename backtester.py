@@ -97,7 +97,7 @@ class Backtester:
                 # self.cerebro.datas[index].plotinfo.plot = False
                 index = index + 1
             else:
-                print("Ignoring ticker: " + ticker)
+                print("Ignoring ticker: " + ticker + " due to insufficient data")
 
     def run_strategy_reports(self):
         self.returns.index = self.returns.index.tz_convert(None)

@@ -11,6 +11,22 @@ class CrossoverStrategy(bt.Strategy):
     ----------
     params : tuple
         Parameters for the strategy.
+    o : dict
+        The orders for all tickers.
+    inds : dict
+        The indicators for all tickers.
+    start_val : float
+        The starting value of the strategy.
+    end_val : float
+        The ending value of the strategy.
+    start_date : datetime.date
+        The starting date of the strategy.
+    end_date : datetime.date
+        The ending date of the strategy.
+    elapsed_days : int
+        The amount of days between the start and end date.
+    cagr : float
+        The Compound Annual Growth Rate (CAGR) for the strategy.
 
     Methods
     -------
@@ -18,11 +34,16 @@ class CrossoverStrategy(bt.Strategy):
         The logger for the strategy.
     notify_order()
         Handle orders and provide a notification from the broker based on the order.
+    start()
+        Runs at the start. Records starting portfolio value and time.
     prenext()
-        The method is used when all data points are not available.
-        Very few (if any) periods will have data for every ticker.
+        The method is used all data points once the minimum period of all data/indicators has been met.
     next()
         The method used for all remaining data points once the minimum period of all data/indicators has been met.
+    stop()
+        Runs when the strategy stops. Record the final value of the portfolio and calculate the CAGR.
+    notify_trade()
+        Handle trades and provide a notification from the broker based on the trade.
     """
     # parameters for the strategy
     params = (
@@ -58,12 +79,16 @@ class CrossoverStrategy(bt.Strategy):
 
         Parameters
         ----------
+        txt : str
+            The text to be logged.
+        dt : NoneType
+            The datetime.
 
         Raises
         ------
 
         """
-        dt = dt or self.datas[0].datetime.datetime(0)
+        dt = dt or self.datas[0].datetime.datetime(0).date()
         with Path(self.p.log_file).open('a', newline='', encoding='utf-8') as f:
             log_writer = csv.writer(f)
             log_writer.writerow([dt.isoformat()] + txt.split('~'))
@@ -73,6 +98,8 @@ class CrossoverStrategy(bt.Strategy):
 
         Parameters
         ----------
+        order : backtrader.order.BuyOrder
+            The order object.
 
         Raises
         ------
@@ -109,12 +136,20 @@ class CrossoverStrategy(bt.Strategy):
             self.log(f'{dn},Order Expired')
 
     def start(self):
-        self.val_start = self.broker.get_cash()
-        self.time_start = self.datas[0].datetime.date(1)
+        """Runs at the start. Records starting portfolio value and time.
+
+        Parameters
+        ----------
+
+        Raises
+        ------
+
+        """
+        self.start_val = self.broker.get_cash()
+        self.start_date = self.datas[0].datetime.date(1)
 
     def prenext(self):
         """The method is used when all data points are not available.
-        Very few (if any) periods will have data for every ticker.
 
         Parameters
         ----------
@@ -135,8 +170,8 @@ class CrossoverStrategy(bt.Strategy):
         ------
 
         """
-        if self.p.verbose:
-            self.log('Cash: ' + str(self.broker.get_cash()) + ' Equity: ' + str(self.broker.get_fundvalue()))
+        # if self.p.verbose:
+        #     self.log('Cash: ' + str(self.broker.get_cash()) + ' Equity: ' + str(self.broker.get_fundvalue()))
         # dt = self.datetime.date()
         for i, d in enumerate(self.datas):
             dn = d._name
@@ -155,22 +190,7 @@ class CrossoverStrategy(bt.Strategy):
                         self.log('Cannot sell ' + dn + ' as I am not long')
 
     def stop(self):
-        self.time_end = self.datas[0].datetime.date(0)
-        self.time_elapsed = self.time_end - self.time_start
-        print('Strategy CAGR: {:.3f}%'.format(
-            100 * ((self.broker.get_value() + self.broker.get_cash()) / self.val_start) ** (
-                    1 / (self.time_elapsed.days / 365)) - 100))
-        print('Strategy Portfolio Value: ' + str(self.broker.get_cash() + self.broker.get_value()))
-
-    # def notify_trade(self, trade):
-    #     print("I'm notifying trade!")
-    #     if not trade.isclosed:
-    #         return
-    #     self.log('OPERATION PROFIT, GROSS {}, NET{}'.format(trade.pnl,
-    #                                                         trade.pnlcomm))
-
-    def notify_trade(self, trade):
-        """TBC.
+        """Runs when the strategy stops. Record the final value of the portfolio and calculate the CAGR.
 
         Parameters
         ----------
@@ -179,16 +199,28 @@ class CrossoverStrategy(bt.Strategy):
         ------
 
         """
+        self.end_date = self.datas[0].datetime.date(0)
+        self.elapsed_days = (self.end_date - self.start_date).days
+        self.end_val = self.broker.get_value() + self.broker.get_cash()
+        self.cagr = 100 * (self.end_val / self.start_val) ** (
+                1 / (self.elapsed_days / 365)) - 100
+        print('Strategy CAGR: {:.3f}%'.format(self.cagr))
+        print('Strategy Portfolio Value: ' + str(self.end_val))
+
+    def notify_trade(self, trade):
+        """Handle trades and provide a notification from the broker based on the trade.
+
+        Parameters
+        ----------
+        trade : backtrader.trade.Trade
+            The trade object.
+
+        Raises
+        ------
+
+        """
         if trade.isclosed:
-            # self.log(
-            #     "{} Closed: PnL Gross {}, Net {},".format(
-            #         trade.data._name,
-            #         round(trade.pnl, 2),
-            #         round(trade.pnlcomm, 1),
-            #     )
-            print("{} Closed: PnL Gross {}, Net {},".format(
-                # print(trade.data._name)
-                trade.data._name,
-                round(trade.pnl, 2),
-                round(trade.pnlcomm, 1)))
-            print("finished!")
+            self.log("Position in " + trade.data._name + " opened on " + str(trade.open_datetime().date())
+                     + " and closed on " + str(trade.close_datetime().date()) + " with PnL Gross " + str(
+                round(trade.pnl, 2))
+                     + " and PnL Net " + str(round(trade.pnlcomm, 1)))
