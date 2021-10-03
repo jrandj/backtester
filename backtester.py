@@ -15,18 +15,75 @@ from FixedCommissionScheme import FixedCommissionScheme
 
 
 class Backtester:
-    """
-    TBC
+    """A class that wraps the Backtrader framework.
 
     Attributes
     ----------
-    leagueID : sequence
-        The unique identifier for the league.
+    returns.index : pandas.core.indexes.datetimes.DatetimeIndex
+        A datetime index for the strategy returns.
+    benchmark_returns.index : pandas.core.indexes.datetimes.DatetimeIndex
+        A datetime index for the benchmark returns.
+    cash : float
+        The cash available for the strategies.
+    bulk : str
+        True if all tickers are to be used, False if the tickers are being provided.
+    reports : str
+        True if quantstats reports are to be generated, False otherwise.
+    start_date : str
+        The override start date from configuration used to trim the data range.
+    end_date : tbc
+        The override end date from configuration used to trim the data range.
+    data : pandas.core.frame.DataFrame
+        The dataframe containing all OHCLV ticker data.
+    benchmark_data : pandas.core.frame.DataFrame
+        The dataframe containing the benchmark OHCLV data.
+    cerebro : backtrader.cerebro.Cerebro
+        The cerebro instance for the strategy.
+    comminfo : FixedCommissionScheme.FixedCommissionScheme
+        The broker commissions.
+    returns : pandas.core.series.Series
+        The returns for the strategy.
+    positions : pandas.core.frame.DataFrame
+        A dataframe containing the daily cash and stock positions for the strategy.
+    transactions : pandas.core.frame.DataFrame
+        A dataframe containing the transactions for the strategy.
+    gross_lev : pandas.core.series.Series
+        The leverage for the strategy.
+    benchmark_returns : pandas.core.series.Series
+        The returns for the benchmark.
+    benchmark_positions : pandas.core.frame.DataFrame
+        A dataframe containing the daily cash and stock positions for the benchmark.
+    benchmark_transactions : pandas.core.frame.DataFrame
+        A dataframe containing the transactions for the benchmark.
+    benchmark_gross_lev : pandas.core.series.Series
+        The leverage for the benchmark.
+    end_value : float
+        The final portfolio value for the strategy.
+    benchmark_end_value : float
+        The final portfolio value for the benchmark.
 
     Methods
     -------
-    parse_input()
-        Parse the user input.
+    format_time()
+        Format the time in hh:mm:ss.
+    global_settings():
+        Apply global settings.
+    add_benchmark_data():
+        Add the benchmark data to the benchmark strategy.
+    add_strategy_data():
+        Add the ticker data to the strategy.
+    run_strategy_reports():
+        Run quantstats reports for the strategy.
+    run_benchmark_reports():
+        Run quantstats reports for the benchmark.
+    run_benchmark():
+        Run the benchmark strategy.
+    run_strategy():
+        Run the strategy.
+    clean_logs():
+        Remove the existing log files.
+    import_data():
+        Import OHLCV data.
     """
 
     @staticmethod
@@ -48,7 +105,7 @@ class Backtester:
 
     @staticmethod
     def global_settings():
-        """Format the time in hh:mm:ss.
+        """Apply global settings.
 
         Parameters
         ----------
@@ -63,7 +120,7 @@ class Backtester:
         sns.set_style('darkgrid')
 
     def add_benchmark_data(self):
-        """Format the time in hh:mm:ss.
+        """Add the benchmark data to the benchmark strategy.
 
         Parameters
         ----------
@@ -77,7 +134,7 @@ class Backtester:
             TickerData(dataname=self.benchmark_data.loc[self.benchmark_data['ticker'] == 'XJO']), name='XJO')
 
     def add_strategy_data(self):
-        """Format the time in hh:mm:ss.
+        """Add the ticker data to the strategy.
 
         Parameters
         ----------
@@ -90,7 +147,8 @@ class Backtester:
         tickers = self.tickers
         index = 0
         for i, ticker in enumerate(tickers):
-            ticker_data = self.data.loc[self.data['ticker'] == ticker]  # .sort_values(by='date')
+            ticker_data = self.data.loc[self.data['ticker'] == ticker]
+            # temporary solution for data with less than 200 elements
             if ticker_data['date'].size > 200:
                 print("Adding ticker: " + ticker)
                 self.cerebro.adddata(TickerData(dataname=ticker_data), name=ticker)
@@ -100,17 +158,35 @@ class Backtester:
                 print("Ignoring ticker: " + ticker + " due to insufficient data")
 
     def run_strategy_reports(self):
+        """Run quantstats reports for the strategy.
+
+        Parameters
+        ----------
+
+        Raises
+        ------
+
+        """
         self.returns.index = self.returns.index.tz_convert(None)
         qs.reports.html(self.returns, output='strategy-stats-' + time.strftime("%Y%d%m-%H%M%S") + '.html',
                         title='Strategy Performance')
 
     def run_benchmark_reports(self):
+        """Run quantstats reports for the benchmark.
+
+        Parameters
+        ----------
+
+        Raises
+        ------
+
+        """
         self.benchmark_returns.index = self.benchmark_returns.index.tz_convert(None)
         qs.reports.html(self.benchmark_returns, output='benchmark-stats-' + time.strftime("%Y%d%m-%H%M%S") + '.html',
                         title='Benchmark Performance')
 
     def run_benchmark(self):
-        """Format the time in hh:mm:ss.
+        """Run the benchmark strategy.
 
         Parameters
         ----------
@@ -127,14 +203,13 @@ class Backtester:
         self.cerebro_benchmark.addobserver(bt.observers.Trades)
         self.cerebro_benchmark.addanalyzer(bt.analyzers.PyFolio, _name='pyfolio')
         self.cerebro_benchmark.addstrategy(Benchmark, verbose=True, log_file='benchmark_log.csv')
-        # self.cerebro_benchmark.addsizer(bt.sizers.PercentSizer, percents=100)
         results = self.cerebro_benchmark.run()  # runonce=False
         if self.config['options']['plot'] == 'True':
             self.cerebro_benchmark.plot(volume=False)
         return results
 
     def run_strategy(self):
-        """Format the time in hh:mm:ss.
+        """Run the strategy.
 
         Parameters
         ----------
@@ -159,7 +234,7 @@ class Backtester:
 
     @staticmethod
     def clean_logs():
-        """Format the time in hh:mm:ss.
+        """Remove the existing log files.
 
         Parameters
         ----------
@@ -178,7 +253,7 @@ class Backtester:
             pass
 
     def import_data(self):
-        """Format the time in hh:mm:ss.
+        """Import OHLCV data.
 
         Parameters
         ----------
@@ -206,7 +281,7 @@ class Backtester:
         return data, benchmark_data
 
     def __init__(self):
-        # Set initial configuration
+        # set initial configuration
         self.config = configparser.RawConfigParser()
         self.config.read('config.properties')
         self.global_settings()
@@ -217,15 +292,15 @@ class Backtester:
         self.end_date = self.config['data']['end_date']
         self.clean_logs()
 
-        # Import data
+        # import data
         self.data, self.benchmark_data = self.import_data()
         if self.bulk == 'True':
             self.tickers = self.data['ticker'].unique()
         else:
             self.tickers = self.config['data']['tickers'].split(',')
 
-        # Run the strategy
-        self.cerebro = bt.Cerebro(stdstats=False)  # stdstats=False
+        # run the strategy
+        self.cerebro = bt.Cerebro(stdstats=False)
         self.comminfo = FixedCommissionScheme()
         self.cerebro.broker.set_coc(True)
         self.strategy_results = self.run_strategy()
@@ -233,10 +308,10 @@ class Backtester:
         self.returns, self.positions, self.transactions, self.gross_lev = self.portfolio_stats.get_pf_items()
         if self.reports == 'True':
             self.run_strategy_reports()
-        self.ending_value = self.cerebro.broker.getvalue()
+        self.end_value = self.cerebro.broker.getvalue()
 
-        # Run the benchmark
-        self.cerebro_benchmark = bt.Cerebro(stdstats=False)  # stdstats=False
+        # run the benchmark
+        self.cerebro_benchmark = bt.Cerebro(stdstats=False)
         self.benchmark_comminfo = FixedCommissionScheme()
         self.cerebro_benchmark.broker.set_coc(True)
         self.benchmark_results = self.run_benchmark()
@@ -244,7 +319,7 @@ class Backtester:
         self.benchmark_returns, self.benchmark_positions, self.benchmark_transactions, self.benchmark_gross_lev = self.benchmark_stats.get_pf_items()
         if self.reports == 'True':
             self.run_benchmark_reports()
-        self.benchmark_ending_value = self.cerebro_benchmark.broker.getvalue()
+        self.benchmark_end_value = self.cerebro_benchmark.broker.getvalue()
 
 
 def main():
