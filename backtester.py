@@ -7,6 +7,7 @@ import seaborn as sns
 import backtrader as bt
 import configparser
 import quantstats as qs
+from yahooquery import Ticker
 
 from TickerData import TickerData
 from CrossoverStrategy import CrossoverStrategy
@@ -146,6 +147,7 @@ class Backtester:
         # tickers = self.tickers.split(',')
         tickers = self.tickers
         index = 0
+        ignore = 0
         for i, ticker in enumerate(tickers):
             ticker_data = self.data.loc[self.data['ticker'] == ticker]
             # temporary solution for data with less than 200 elements
@@ -155,7 +157,10 @@ class Backtester:
                 # self.cerebro.datas[index].plotinfo.plot = False
                 index = index + 1
             else:
-                print("Ignoring ticker: " + ticker + " due to insufficient data")
+                ignore = ignore + 1
+                print("Ignoring ticker: " + ticker + " due to insufficient data with only " + str(
+                    ticker_data['date'].size) + " rows")
+        print("Loaded data for " + str(index) + " tickers and discarded data for " + str(ignore) + " tickers")
 
     def run_strategy_reports(self):
         """Run quantstats reports for the strategy.
@@ -277,7 +282,7 @@ class Backtester:
         data = data[(data['date'] > comparison_start) & (data['date'] < comparison_end)]
         benchmark_data = benchmark_data[
             (benchmark_data['date'] > comparison_start) & (benchmark_data['date'] < comparison_end)]
-        print("Discarding data before " + str(comparison_start.date()) + " and after " + str(comparison_end.date()))
+        print("Data range is between " + str(comparison_start.date()) + " and " + str(comparison_end.date()))
         return data, benchmark_data
 
     def __init__(self):

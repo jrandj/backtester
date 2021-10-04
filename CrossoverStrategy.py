@@ -82,13 +82,13 @@ class CrossoverStrategy(bt.Strategy):
         txt : str
             The text to be logged.
         dt : NoneType
-            The datetime.
+            The date which is typically passed by the client.
 
         Raises
         ------
 
         """
-        dt = dt or self.datas[0].datetime.datetime(0).date()
+        dt = dt or self.datas[0].datetime.date
         with Path(self.p.log_file).open('a', newline='', encoding='utf-8') as f:
             log_writer = csv.writer(f)
             log_writer.writerow([dt.isoformat()] + txt.split('~'))
@@ -108,10 +108,10 @@ class CrossoverStrategy(bt.Strategy):
         dt, dn = self.datetime.date(), order.data._name
 
         if order.status == order.Submitted:
-            self.log(f'{dn},Order Submitted')
+            self.log(f'{dn},Order Submitted', dt)
             return
         elif order.status == order.Accepted:
-            self.log(f'{dn},Order Accepted')
+            self.log(f'{dn},Order Accepted', dt)
             return
         elif order.status == order.Completed:
             # allow orders for this ticker again
@@ -121,19 +121,19 @@ class CrossoverStrategy(bt.Strategy):
                 v = order.executed.value
                 c = order.executed.comm
                 if order.isbuy():
-                    self.log(f'{dn},BUY executed, Price:{p:.2f}, Cost: {v:.2f}, Comm: {c:.2f}')
+                    self.log(f'{dn},BUY executed, Price:{p:.2f}, Cost: {v:.2f}, Comm: {c:.2f}', dt)
                 elif order.issell():
-                    self.log(f'{dn},SELL executed, Price:{p:.2f}, Cost: {v:.2f}, Comm: {c:.2f}')
+                    self.log(f'{dn},SELL executed, Price:{p:.2f}, Cost: {v:.2f}, Comm: {c:.2f}', dt)
         elif order.status == order.Canceled and self.p.verbose:
-            self.log(f'{dn},Order Canceled')
+            self.log(f'{dn},Order Canceled', dt)
         elif order.status == order.Margin and self.p.verbose:
-            self.log(f'{dn},Order Margin')
+            self.log(f'{dn},Order Margin', dt)
         elif order.status == order.Rejected and self.p.verbose:
-            self.log(f'{dn},Order Rejected')
+            self.log(f'{dn},Order Rejected', dt)
         elif order.status == order.Partial and self.p.verbose:
-            self.log(f'{dn},Order Partial')
+            self.log(f'{dn},Order Partial', dt)
         elif order.status == order.Expired and self.p.verbose:
-            self.log(f'{dn},Order Expired')
+            self.log(f'{dn},Order Expired', dt)
 
     def start(self):
         """Runs at the start. Records starting portfolio value and time.
@@ -170,9 +170,9 @@ class CrossoverStrategy(bt.Strategy):
         ------
 
         """
+        dt = self.datetime.date()
         # if self.p.verbose:
-        #     self.log('Cash: ' + str(self.broker.get_cash()) + ' Equity: ' + str(self.broker.get_fundvalue()))
-        # dt = self.datetime.date()
+        #     self.log('Cash: ' + str(self.broker.get_cash()) + ' Equity: ' + str(self.broker.get_fundvalue()), dt)
         for i, d in enumerate(self.datas):
             dn = d._name
             # if there are no orders already for this ticker
@@ -182,12 +182,12 @@ class CrossoverStrategy(bt.Strategy):
                     if not self.getposition(d).size:
                         self.o[d] = self.buy(data=d)
                     else:
-                        self.log('Cannot buy ' + dn + 'as I am already long')
+                        self.log('Cannot buy ' + dn + 'as I am already long', dt)
                 elif self.inds[d]['cross'] == -1:
                     if self.getposition(d).size:
                         self.o[d] = self.close(data=d)
                     else:
-                        self.log('Cannot sell ' + dn + ' as I am not long')
+                        self.log('Cannot sell ' + dn + ' as I am not long', dt)
 
     def stop(self):
         """Runs when the strategy stops. Record the final value of the portfolio and calculate the CAGR.
@@ -219,8 +219,9 @@ class CrossoverStrategy(bt.Strategy):
         ------
 
         """
+        dt = self.datetime.date()
         if trade.isclosed:
             self.log("Position in " + trade.data._name + " opened on " + str(trade.open_datetime().date())
                      + " and closed on " + str(trade.close_datetime().date()) + " with PnL Gross " + str(
                 round(trade.pnl, 2))
-                     + " and PnL Net " + str(round(trade.pnlcomm, 1)))
+                     + " and PnL Net " + str(round(trade.pnlcomm, 1)), dt)
