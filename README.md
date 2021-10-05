@@ -75,8 +75,16 @@ Front-running strategies can be used by a sell-side market maker to profit from 
 
 The following pre-requisites are required:
 
-1. Python 3.9.7
-1. [Anaconda](https://www.anaconda.com/products/individual)
+1. [Python 3.9.7](https://www.python.org/downloads/release/python-397/).
+1. [Anaconda](https://www.anaconda.com/products/individual).
+
+Once these are installed:
+1. Open the Anaconda Prompt.
+1. Run `where conda` and note the folder paths (excluding the file name component).
+1. Add these folder paths to the PATH environment variable.
+1. Open a new Command Prompt.
+1. Run `conda --version` to verify that it is accessible.
+1. Python should automatically be added to the PATH but run `python --version` to confirm.
 
 ### Installation
 
@@ -87,10 +95,12 @@ To install Backtester:
     conda env create -f environment.yml
     ```
 
-2. Activate the virtual environment:
+1. Activate the virtual environment:
     ```bash
     conda activate backtester
     ```
+
+1. Configure your IDE to use the new environment.
 
 To uninstall Backtester:
 
