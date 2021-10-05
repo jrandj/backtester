@@ -19,7 +19,7 @@ class FixedCommissionScheme(bt.CommInfoBase):
     params = (
         ('commission', .0299),
         ('stocklike', True),
-        ('commtype', bt.CommInfoBase.COMM_FIXED),
+        ('commtype', bt.CommInfoBase.COMM_PERC),
     )
 
     def _getcommission(self, size, price, pseudoexec):
