@@ -111,7 +111,7 @@ To uninstall Backtester:
 
 To update the Backtester dependencies (FYI only):
 
-1. Create the virtual environment:
+1. Update the conda packages to the latest compatible versions:
     ```bash
     conda update --all
     ```
