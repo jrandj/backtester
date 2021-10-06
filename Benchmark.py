@@ -48,13 +48,13 @@ class Benchmark(bt.Strategy):
         txt : str
             The text to be logged.
         dt : NoneType
-            The datetime.
+            The date which is typically passed by the client.
 
         Raises
         ------
 
         """
-        dt = dt or self.datas[0].datetime.datetime(0)
+        dt = dt or self.datas[0].datetime.date
         with Path(self.p.log_file).open('a', newline='', encoding='utf-8') as f:
             log_writer = csv.writer(f)
             log_writer.writerow([dt.isoformat()] + txt.split('~'))
@@ -71,7 +71,15 @@ class Benchmark(bt.Strategy):
         """
         self.start_val = self.broker.get_cash()
         self.start_date = self.datas[0].datetime.date(1)
-        size = int(self.broker.get_cash() / self.data)
+
+        # unfortunately the AllInSizer does not work with cheat on close (so need to calculate order size manually)
+        if self.broker.get_cash() <= 5000:
+            commission = 14.95
+        elif 5000 < self.broker.get_cash() < 20000:
+            commission = 19.95
+        else:
+            commission = 0.0011 * self.broker.get_cash()
+        size = int((self.broker.get_cash() - commission) / self.data)
         self.buy(size=size)
 
     def notify_order(self, order):
@@ -88,10 +96,10 @@ class Benchmark(bt.Strategy):
         """
         dt, dn = self.datetime.date(), order.data._name
         if order.status == order.Submitted:
-            self.log(f'{dn},Order Submitted')
+            self.log(f'{dn},Order Submitted', dt)
             return
         elif order.status == order.Accepted:
-            self.log(f'{dn},Order Accepted')
+            self.log(f'{dn},Order Accepted', dt)
             return
         elif order.status == order.Completed:
             if self.p.verbose:
@@ -99,19 +107,22 @@ class Benchmark(bt.Strategy):
                 v = order.executed.value
                 c = order.executed.comm
                 if order.isbuy():
-                    self.log(f'{dn},BUY executed, Price:{p:.2f}, Cost: {v:.2f}, Comm: {c:.2f}')
+                    self.log(f'{dn},BUY executed, Price:{p:.6f}, Cost: {v:.6f}, Comm: {c:.6f}', dt)
                 elif order.issell():
-                    self.log(f'{dn},SELL executed, Price:{p:.2f}, Cost: {v:.2f}, Comm: {c:.2f}')
+                    self.log(f'{dn},SELL executed, Price:{p:.6f}, Cost: {v:.6f}, Comm: {c:.6f}', dt)
         elif order.status == order.Canceled and self.p.verbose:
-            self.log(f'{dn},Order Canceled')
+            self.log(f'{dn},Order Canceled', dt)
         elif order.status == order.Margin and self.p.verbose:
-            self.log(f'{dn},Order Margin')
+            p = order.executed.price
+            v = order.executed.value
+            c = order.executed.comm
+            self.log(f'{dn},Order Margin', dt)
         elif order.status == order.Rejected and self.p.verbose:
-            self.log(f'{dn},Order Rejected')
+            self.log(f'{dn},Order Rejected', dt)
         elif order.status == order.Partial and self.p.verbose:
-            self.log(f'{dn},Order Partial')
+            self.log(f'{dn},Order Partial', dt)
         elif order.status == order.Expired and self.p.verbose:
-            self.log(f'{dn},Order Expired')
+            self.log(f'{dn},Order Expired', dt)
 
     def stop(self):
         """Runs when the strategy stops. Record the final value of the portfolio and calculate the CAGR.
@@ -125,8 +136,8 @@ class Benchmark(bt.Strategy):
         """
         self.end_date = self.datas[0].datetime.date(0)
         self.elapsed_days = (self.end_date - self.start_date).days
-        self.end_val = self.broker.get_value() + self.broker.get_cash()
+        self.end_val = self.broker.get_value()
         self.cagr = 100 * (self.end_val / self.start_val) ** (
-                1 / (self.elapsed_days / 365)) - 100
-        print('Benchmark CAGR: {:.3f}%'.format(self.cagr))
+                1 / (self.elapsed_days / 365.25)) - 100
+        print('Benchmark CAGR: {:.4f}%'.format(self.cagr))
         print('Benchmark Portfolio Value: ' + str(self.end_val))

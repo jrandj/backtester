@@ -17,9 +17,8 @@ class FixedCommissionScheme(bt.CommInfoBase):
     """
     # parameters for the commission scheme
     params = (
-        ('commission', .0299),
         ('stocklike', True),
-        ('commtype', bt.CommInfoBase.COMM_PERC),
+        ('commtype', bt.CommInfoBase.COMM_FIXED),
     )
 
     def _getcommission(self, size, price, pseudoexec):
@@ -38,4 +37,10 @@ class FixedCommissionScheme(bt.CommInfoBase):
         ------
 
         """
-        return abs(size) * self.p.commission
+        value = abs(size) * price
+        if value <= 5000:
+            return 14.95
+        elif 5000 < value < 20000:
+            return 19.95
+        else:
+            return 0.0011 * value

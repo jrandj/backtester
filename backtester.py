@@ -7,6 +7,7 @@ import seaborn as sns
 import backtrader as bt
 import configparser
 import quantstats as qs
+import glob
 from yahooquery import Ticker
 
 from TickerData import TickerData
@@ -201,6 +202,7 @@ class Backtester:
 
         """
         self.cerebro_benchmark.broker.addcommissioninfo(self.benchmark_comminfo)
+        # self.cerebro_benchmark.broker.setcommission(self.benchmark_comminfo)
         self.cerebro_benchmark.broker.setcash(self.cash)
         self.add_benchmark_data()
         self.cerebro_benchmark.addobservermulti(bt.observers.BuySell, barplot=True, bardist=0.0025)
@@ -208,6 +210,8 @@ class Backtester:
         self.cerebro_benchmark.addobserver(bt.observers.Trades)
         self.cerebro_benchmark.addanalyzer(bt.analyzers.PyFolio, _name='pyfolio')
         self.cerebro_benchmark.addstrategy(Benchmark, verbose=True, log_file='benchmark_log.csv')
+        # unfortunately the AllInSizer does not work with cheat on close (so need to calculate order size manually)
+        # self.cerebro_benchmark.addsizer(bt.sizers.AllInSizer)
         results = self.cerebro_benchmark.run()  # runonce=False
         if self.config['options']['plot'] == 'True':
             self.cerebro_benchmark.plot(volume=False)
@@ -258,7 +262,8 @@ class Backtester:
             pass
 
     def import_data(self):
-        """Import OHLCV data.
+        """Import OHLCV data. Read from a consolidated hdf file if available, else read from a consolidated .csv file,
+        else consolidate the data from various .csv files.
 
         Parameters
         ----------
@@ -267,18 +272,54 @@ class Backtester:
         ------
 
         """
-        data = pd.read_hdf(self.config['data']['path'], 'table')  # .sort_values(by=['date', 'ticker'], ascending=True)
-        benchmark_data = pd.read_csv(self.config['data']['benchmark'], parse_dates=['date'],
-                                     dayfirst=True)  # .sort_values(by='date', ascending=True)
+        if len(self.config['data']['path']) > 0:
+            directory = self.config['data']['path']
+        else:
+            directory = os.path.join(os.path.dirname(__file__), "data",
+                                     self.config['data']['path'])
+
+        # read data
+        if os.path.isfile(os.path.join(directory, "data" + os.extsep + "h5")):
+            print("Reading data from consolidated .h5")
+            data = pd.read_hdf(os.path.join(directory, "data" + os.extsep + "h5"), 'table')
+        elif os.path.isfile(os.path.join(directory, "data" + os.extsep + "csv")):
+            print("Reading data from consolidated .csv")
+            data = pd.read_csv(os.path.join(directory, "data" + os.extsep + "csv"), header=0, index_col=False,
+                               parse_dates=["date"], dayfirst=True)
+            data.to_hdf(os.path.join(directory, "data" + os.extsep + "h5"), 'table', append=True)
+        else:
+            print("Reading data from .csv in directory and creating consolidated files for future use")
+            data = pd.DataFrame()
+            all_files = glob.glob(os.path.join(directory, "*.csv"))
+
+            def dateparse(x):
+                return pd.datetime.strptime(x, "%d/%m/%Y")
+
+            for file_name in all_files:
+
+                if file_name != os.path.join(directory, self.config['data']['benchmark'] + os.extsep + "csv"):
+                    x = pd.read_csv(file_name, names=["date", "open", "high", "low", "close", "volume", "ticker"],
+                                    parse_dates=["date"], dayfirst=True, dtype={"ticker": str}, skiprows=1,
+                                    date_parser=dateparse)
+                    data = pd.concat([data, x], ignore_index=True)
+                    os.path.join(directory, "data" + os.extsep + "csv")
+            data.to_csv(os.path.join(directory, "data" + os.extsep + "csv"), sep=",",
+                        header=["date", "open", "high", "low", "close", "volume", "ticker"], index=False)
+            data.to_hdf(os.path.join(directory, "data" + os.extsep + "h5"), 'table', append=True)
+
+        # read benchmark data
+        benchmark_data = pd.read_csv(
+            os.path.join(directory, self.config['data']['benchmark'] + os.extsep + "csv"),
+            parse_dates=['date'], dayfirst=True)
+
+        # apply date ranges
         comparison_start = max(data['date'].min(), benchmark_data['date'].min())
         comparison_end = min(data['date'].max(), benchmark_data['date'].max())
-
         # allow override from config
         if len(self.start_date) > 0 and pd.to_datetime(self.start_date) < comparison_end:
             comparison_start = pd.to_datetime(self.start_date)
         if len(self.end_date) > 0 and pd.to_datetime(self.end_date) > comparison_start:
             comparison_end = pd.to_datetime(self.end_date)
-
         data = data[(data['date'] > comparison_start) & (data['date'] < comparison_end)]
         benchmark_data = benchmark_data[
             (benchmark_data['date'] > comparison_start) & (benchmark_data['date'] < comparison_end)]

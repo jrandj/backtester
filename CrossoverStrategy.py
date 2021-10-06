@@ -121,9 +121,9 @@ class CrossoverStrategy(bt.Strategy):
                 v = order.executed.value
                 c = order.executed.comm
                 if order.isbuy():
-                    self.log(f'{dn},BUY executed, Price:{p:.2f}, Cost: {v:.2f}, Comm: {c:.2f}', dt)
+                    self.log(f'{dn},BUY executed, Price:{p:.6f}, Cost: {v:.6f}, Comm: {c:.6f}', dt)
                 elif order.issell():
-                    self.log(f'{dn},SELL executed, Price:{p:.2f}, Cost: {v:.2f}, Comm: {c:.2f}', dt)
+                    self.log(f'{dn},SELL executed, Price:{p:.6f}, Cost: {v:.6f}, Comm: {c:.6f}', dt)
         elif order.status == order.Canceled and self.p.verbose:
             self.log(f'{dn},Order Canceled', dt)
         elif order.status == order.Margin and self.p.verbose:
@@ -172,7 +172,8 @@ class CrossoverStrategy(bt.Strategy):
         """
         dt = self.datetime.date()
         # if self.p.verbose:
-        #     self.log('Cash: ' + str(self.broker.get_cash()) + ' Equity: ' + str(self.broker.get_fundvalue()), dt)
+        #     self.log('Cash: ' + str(self.broker.get_cash()) + ' Equity: ' + str(
+        #         self.broker.get_value() - self.broker.get_cash()), dt)
         for i, d in enumerate(self.datas):
             dn = d._name
             # if there are no orders already for this ticker
@@ -201,10 +202,10 @@ class CrossoverStrategy(bt.Strategy):
         """
         self.end_date = self.datas[0].datetime.date(0)
         self.elapsed_days = (self.end_date - self.start_date).days
-        self.end_val = self.broker.get_value() + self.broker.get_cash()
+        self.end_val = self.broker.get_value()
         self.cagr = 100 * (self.end_val / self.start_val) ** (
-                1 / (self.elapsed_days / 365)) - 100
-        print('Strategy CAGR: {:.3f}%'.format(self.cagr))
+                1 / (self.elapsed_days / 365.25)) - 100
+        print('Strategy CAGR: {:.4f}%'.format(self.cagr))
         print('Strategy Portfolio Value: ' + str(self.end_val))
 
     def notify_trade(self, trade):

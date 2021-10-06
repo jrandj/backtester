@@ -1,6 +1,6 @@
 # Backtester
 
-Backtester is a Python application for testing trading strategies against historical data. Backtester is heavily reliant on the [Backtrader](https://github.com/mementum/backtrader) framework
+Backtester is a Python application for testing trading strategies against historical data. Backtester is heavily reliant on the [Backtrader](https://github.com/mementum/backtrader) framework.
 
 ## Architecture
 
@@ -24,8 +24,10 @@ A key challenge is determining which of the indicators for 2,628 stocks to consi
 
 The following assumptions or decisions have been made:
 
-1. The brokerage commission fee is 2.9%.
+1. The brokerage commission fee structure is as per [Nabtrade](https://www.nabtrade.com.au/investor/pricing). This is assumed to have been available historically.
 2. The relative sizing of any order is 2% of the available cash.
+3. When an order is executed, the price of the current bar is used (this is called "cheat-on-close" in the backtrader framework documentation). In reality, the price from the next bar should be used. This is done to simplify sizing of the orders. When looking at the strategy logs this can be observed with the value of an order corresponding to the price on the *previous* day and not the day on which the order is executed.
+4. Orders from our trading do not impact the market price.
 
 ### Trend-Following Strategies
 
