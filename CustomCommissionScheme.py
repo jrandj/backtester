@@ -1,7 +1,7 @@
 import backtrader as bt
 
 
-class FixedCommissionScheme(bt.CommInfoBase):
+class CustomCommissionScheme(bt.CommInfoBase):
     """
     A class that sets the commission for the broker.
 

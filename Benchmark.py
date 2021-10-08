@@ -71,6 +71,7 @@ class Benchmark(bt.Strategy):
         """
         self.start_val = self.broker.get_cash()
         self.start_date = self.datas[0].datetime.date(1)
+        print("Benchmark start date: " + str(self.start_date))
 
         # unfortunately the AllInSizer does not work with cheat on close (so need to calculate order size manually)
         if self.broker.get_cash() <= 5000:
@@ -135,9 +136,10 @@ class Benchmark(bt.Strategy):
 
         """
         self.end_date = self.datas[0].datetime.date(0)
+        print("Benchmark end date: " + str(self.end_date))
         self.elapsed_days = (self.end_date - self.start_date).days
         self.end_val = self.broker.get_value()
-        self.cagr = 100 * (self.end_val / self.start_val) ** (
-                1 / (self.elapsed_days / 365.25)) - 100
-        print('Benchmark CAGR: {:.4f}%'.format(self.cagr))
+        self.cagr = 100 * ((self.end_val / self.start_val) ** (
+                1 / (self.elapsed_days / 365.25)) - 1)
+        print(f'Benchmark CAGR: {self.cagr:.4f}% (over {(self.elapsed_days / 365.25):.2f} years)')
         print('Benchmark Portfolio Value: ' + str(self.end_val))

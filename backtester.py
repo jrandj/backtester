@@ -10,10 +10,11 @@ import quantstats as qs
 import glob
 from yahooquery import Ticker
 
+from CustomSizer import CustomSizer
 from TickerData import TickerData
 from CrossoverStrategy import CrossoverStrategy
 from Benchmark import Benchmark
-from FixedCommissionScheme import FixedCommissionScheme
+from CustomCommissionScheme import CustomCommissionScheme
 
 
 class Backtester:
@@ -131,7 +132,7 @@ class Backtester:
         ------
 
         """
-        print("Adding ticker: " + 'XJO')
+        print("Adding ticker to benchmark: " + 'XJO')
         self.cerebro_benchmark.adddata(
             TickerData(dataname=self.benchmark_data.loc[self.benchmark_data['ticker'] == 'XJO']), name='XJO')
 
@@ -145,7 +146,6 @@ class Backtester:
         ------
 
         """
-        # tickers = self.tickers.split(',')
         tickers = self.tickers
         index = 0
         ignore = 0
@@ -153,13 +153,13 @@ class Backtester:
             ticker_data = self.data.loc[self.data['ticker'] == ticker]
             # temporary solution for data with less than 200 elements
             if ticker_data['date'].size > 200:
-                print("Adding ticker: " + ticker)
+                print("Adding ticker to strategy: " + ticker)
                 self.cerebro.adddata(TickerData(dataname=ticker_data), name=ticker)
                 # self.cerebro.datas[index].plotinfo.plot = False
                 index = index + 1
             else:
                 ignore = ignore + 1
-                print("Ignoring ticker: " + ticker + " due to insufficient data with only " + str(
+                print("Did not add: " + ticker + " to strategy due to insufficient data with only " + str(
                     ticker_data['date'].size) + " rows")
         print("Loaded data for " + str(index) + " tickers and discarded data for " + str(ignore) + " tickers")
 
@@ -201,7 +201,7 @@ class Backtester:
         ------
 
         """
-        self.cerebro_benchmark.broker.addcommissioninfo(self.benchmark_comminfo)
+        self.cerebro_benchmark.broker.addcommissioninfo(self.comminfo)
         # self.cerebro_benchmark.broker.setcommission(self.benchmark_comminfo)
         self.cerebro_benchmark.broker.setcash(self.cash)
         self.add_benchmark_data()
@@ -212,6 +212,7 @@ class Backtester:
         self.cerebro_benchmark.addstrategy(Benchmark, verbose=True, log_file='benchmark_log.csv')
         # unfortunately the AllInSizer does not work with cheat on close (so need to calculate order size manually)
         # self.cerebro_benchmark.addsizer(bt.sizers.AllInSizer)
+        print("Running benchmark...")
         results = self.cerebro_benchmark.run()  # runonce=False
         if self.config['options']['plot'] == 'True':
             self.cerebro_benchmark.plot(volume=False)
@@ -235,7 +236,9 @@ class Backtester:
         self.cerebro.addobserver(bt.observers.Trades)
         self.cerebro.addanalyzer(bt.analyzers.PyFolio, _name='pyfolio')
         self.cerebro.addstrategy(CrossoverStrategy, verbose=True, log_file='strategy_log.csv')
-        self.cerebro.addsizer(bt.sizers.PercentSizer, percents=2)
+        self.cerebro.addsizer(CustomSizer, percents=2)
+        # self.cerebro.addsizer(bt.sizers.PercentSizer, percents=2)
+        print("Running strategy...")
         results = self.cerebro.run()  # runonce=False
         if self.config['options']['plot'] == 'True':
             self.cerebro.plot(volume=False)
@@ -336,6 +339,7 @@ class Backtester:
         self.reports = self.config['options']['reports']
         self.start_date = self.config['data']['start_date']
         self.end_date = self.config['data']['end_date']
+        self.comminfo = CustomCommissionScheme()
         self.clean_logs()
 
         # import data
@@ -347,7 +351,6 @@ class Backtester:
 
         # run the strategy
         self.cerebro = bt.Cerebro(stdstats=False)
-        self.comminfo = FixedCommissionScheme()
         self.cerebro.broker.set_coc(True)
         self.strategy_results = self.run_strategy()
         self.portfolio_stats = self.strategy_results[0].analyzers.getbyname('pyfolio')
@@ -358,7 +361,6 @@ class Backtester:
 
         # run the benchmark
         self.cerebro_benchmark = bt.Cerebro(stdstats=False)
-        self.benchmark_comminfo = FixedCommissionScheme()
         self.cerebro_benchmark.broker.set_coc(True)
         self.benchmark_results = self.run_benchmark()
         self.benchmark_stats = self.benchmark_results[0].analyzers.getbyname('pyfolio')

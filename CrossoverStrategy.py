@@ -50,6 +50,7 @@ class CrossoverStrategy(bt.Strategy):
         ('verbose', True),
         ('sma1', 50),
         ('sma2', 200),
+        ('position_limit', 50),
         ('log_file', 'strategy.csv')
     )
 
@@ -146,7 +147,12 @@ class CrossoverStrategy(bt.Strategy):
 
         """
         self.start_val = self.broker.get_cash()
-        self.start_date = self.datas[0].datetime.date(1)
+        start_date = self.datas[0].datetime.date(1)
+        for data in self.datas:
+            if data.datetime.date(1) < start_date:
+                start_date = data.datetime.date(1)
+        self.start_date = start_date
+        print("Strategy start date: " + str(self.start_date))
 
     def prenext(self):
         """The method is used when all data points are not available.
@@ -171,9 +177,15 @@ class CrossoverStrategy(bt.Strategy):
 
         """
         dt = self.datetime.date()
-        # if self.p.verbose:
-        #     self.log('Cash: ' + str(self.broker.get_cash()) + ' Equity: ' + str(
-        #         self.broker.get_value() - self.broker.get_cash()), dt)
+        position_count = 0
+        for position in self.broker.positions:
+            if self.broker.getposition(position).size > 0:
+                position_count = position_count + 1
+        cash_percent = 100 * (self.broker.get_cash() / self.broker.get_value())
+        if self.p.verbose:
+            self.log(f'Cash: {self.broker.get_cash():.2f}, '
+                     f'Equity: {self.broker.get_value() - self.broker.get_cash():.2f} '
+                     f'Cash %: {cash_percent:.2f}, Positions: {position_count}', dt)
         for i, d in enumerate(self.datas):
             dn = d._name
             # if there are no orders already for this ticker
@@ -181,9 +193,13 @@ class CrossoverStrategy(bt.Strategy):
                 # check the signals
                 if self.inds[d]['cross'] == 1:
                     if not self.getposition(d).size:
-                        self.o[d] = self.buy(data=d)
+                        if position_count < self.params.position_limit:
+                            self.o[d] = self.buy(data=d)
+                        else:
+                            self.log('Cannot buy ' + dn + ' as I have ' + str(position_count) + ' positions already',
+                                     dt)
                     else:
-                        self.log('Cannot buy ' + dn + 'as I am already long', dt)
+                        self.log('Cannot buy ' + dn + ' as I am already long', dt)
                 elif self.inds[d]['cross'] == -1:
                     if self.getposition(d).size:
                         self.o[d] = self.close(data=d)
@@ -200,12 +216,18 @@ class CrossoverStrategy(bt.Strategy):
         ------
 
         """
-        self.end_date = self.datas[0].datetime.date(0)
+        end_date = self.datas[0].datetime.date(0)
+        for data in self.datas:
+            if data.datetime.date(0) > end_date:
+                end_date = data.datetime.date(0)
+        self.end_date = end_date
+        print("Strategy end date: " + str(self.end_date))
+
         self.elapsed_days = (self.end_date - self.start_date).days
         self.end_val = self.broker.get_value()
-        self.cagr = 100 * (self.end_val / self.start_val) ** (
-                1 / (self.elapsed_days / 365.25)) - 100
-        print('Strategy CAGR: {:.4f}%'.format(self.cagr))
+        self.cagr = 100 * ((self.end_val / self.start_val) ** (
+                1 / (self.elapsed_days / 365.25)) - 1)
+        print(f'Strategy CAGR: {self.cagr:.4f}% (over {(self.elapsed_days / 365.25):.2f} years)')
         print('Strategy Portfolio Value: ' + str(self.end_val))
 
     def notify_trade(self, trade):

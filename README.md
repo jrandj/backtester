@@ -14,26 +14,28 @@ The data is OHLCV with the an example shown below:
 
 Data was obtained from [Premium Data](https://www.premiumdata.net/products/premiumdata/asxhistorical.php) at a point in time. The data covers 2,628 stocks listed on the ASX between 1992-05-29 and 2018-05-04.
 
+By default the sample .csv files in the `data` subdirectory will be used when the application is run. To use a wider set of data update the path variable in config.properties to point to a folder with additional data.
+
 ## Results
 
 Multiple algorithmic trading strategies have been tested below.
-
-A key challenge is determining which of the indicators for 2,628 stocks to consider, and the amount of capital that should be deployed when taking a position. In a simple OHLCV dataset there is likely insufficient information to be too creative. For example, to only consider the largest stocks in the index you would need historical market cap data.
 
 ### Assumptions
 
 The following assumptions or decisions have been made:
 
 1. The brokerage commission fee structure is as per [Nabtrade](https://www.nabtrade.com.au/investor/pricing). This is assumed to have been available historically.
-2. The relative sizing of any order is 2% of the available cash.
-3. When an order is executed, the price of the current bar is used (this is called "cheat-on-close" in the backtrader framework documentation). In reality, the price from the next bar should be used. This is done to simplify sizing of the orders. When looking at the strategy logs this can be observed with the value of an order corresponding to the price on the *previous* day and not the day on which the order is executed.
-4. Orders from our trading do not impact the market price.
+1. The relative sizing of any order is 2% of the starting cash if possible, else 2% of the remaining cash.
+1. There is a limit of 50 open positions and 1 open position only per asset.
+1. Slippage is 0%.
+1. When an order is executed, the price of the current bar is used (this is called "cheat-on-close" in the backtrader framework documentation). In reality, the price from the next bar should be used. This is done to simplify sizing of the orders. When looking at the strategy logs this can be observed with the value of an order corresponding to the price on the *previous* day and not the day on which the order is executed.
+1. Orders from trading do not impact the market price.
 
 ### Trend-Following Strategies
 
 These are the most common algorithmic trading strategies which follow trends in moving averages, channel breakouts, price level movements, and related technical indicators.
 
-An implementation of a 50-day and 200-day moving average cross-over strategy is available in [CrossoverStrategy](CrossoverStrategy.py). This strategy when run for all data (2,172 stocks with 456 discarded) returns a CAGR of -59.2%. This underperforms the XJO benchmark for this period by 64.25%.
+An implementation of a 50-day and 200-day moving average cross-over strategy is available in [CrossoverStrategy](CrossoverStrategy.py). This implementation is long only. This strategy when run for all data (2,172 stocks with 456 discarded due to insufficient data quantity) returns a CAGR of 8.76%. This outperforms the XJO benchmark for this period by 3.71%.
 
 ### Arbitrage Opportunities
 
