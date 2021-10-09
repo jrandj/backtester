@@ -149,18 +149,34 @@ class Backtester:
         tickers = self.tickers
         index = 0
         ignore = 0
+        minimum_size_vectorised_false = 1
+        minimum_size_vectorised_true = 200
+
         for i, ticker in enumerate(tickers):
             ticker_data = self.data.loc[self.data['ticker'] == ticker]
-            # temporary solution for data with less than 200 elements
-            if ticker_data['date'].size > 200:
-                print("Adding ticker to strategy: " + ticker)
-                self.cerebro.adddata(TickerData(dataname=ticker_data), name=ticker)
-                # self.cerebro.datas[index].plotinfo.plot = False
-                index = index + 1
+            if self.config['options']['vectorised'] == 'True':
+                if ticker_data['date'].size > minimum_size_vectorised_true:
+                    print("Adding ticker to strategy: " + ticker + " with " + str(ticker_data['date'].size)
+                          + " rows")
+                    self.cerebro.adddata(TickerData(dataname=ticker_data), name=ticker)
+                    # self.cerebro.datas[index].plotinfo.plot = False
+                    index = index + 1
+                else:
+                    ignore = ignore + 1
+                    print("Did not add: " + ticker + " to strategy due to insufficient data with only " + str(
+                        ticker_data['date'].size) + " rows")
             else:
-                ignore = ignore + 1
-                print("Did not add: " + ticker + " to strategy due to insufficient data with only " + str(
-                    ticker_data['date'].size) + " rows")
+                if ticker_data['date'].size > minimum_size_vectorised_false:
+                    self.cerebro.adddata(TickerData(dataname=ticker_data), name=ticker)
+                    # self.cerebro.datas[index].plotinfo.plot = False
+                    print("Adding ticker to strategy: " + ticker + " with " + str(ticker_data['date'].size)
+                          + " rows")
+                    index = index + 1
+                else:
+                    ignore = ignore + 1
+                    print("Did not add: " + ticker + " to strategy due to insufficient data with only " + str(
+                        ticker_data['date'].size) + " rows")
+
         print("Loaded data for " + str(index) + " tickers and discarded data for " + str(ignore) + " tickers")
 
     def run_strategy_reports(self):
@@ -202,7 +218,6 @@ class Backtester:
 
         """
         self.cerebro_benchmark.broker.addcommissioninfo(self.comminfo)
-        # self.cerebro_benchmark.broker.setcommission(self.benchmark_comminfo)
         self.cerebro_benchmark.broker.setcash(self.cash)
         self.add_benchmark_data()
         self.cerebro_benchmark.addobservermulti(bt.observers.BuySell, barplot=True, bardist=0.0025)
@@ -239,7 +254,10 @@ class Backtester:
         self.cerebro.addsizer(CustomSizer, percents=2)
         # self.cerebro.addsizer(bt.sizers.PercentSizer, percents=2)
         print("Running strategy...")
-        results = self.cerebro.run()  # runonce=False
+        if self.config['options']['vectorised'] == 'True':
+            results = self.cerebro.run(runonce=True)
+        else:
+            results = self.cerebro.run(runonce=False)
         if self.config['options']['plot'] == 'True':
             self.cerebro.plot(volume=False)
         return results

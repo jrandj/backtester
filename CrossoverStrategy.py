@@ -27,6 +27,8 @@ class CrossoverStrategy(bt.Strategy):
         The amount of days between the start and end date.
     cagr : float
         The Compound Annual Growth Rate (CAGR) for the strategy.
+    d_with_len : list
+        The subset of data that is guaranteed to be available.
 
     Methods
     -------
@@ -38,6 +40,8 @@ class CrossoverStrategy(bt.Strategy):
         Runs at the start. Records starting portfolio value and time.
     prenext()
         The method is used all data points once the minimum period of all data/indicators has been met.
+    nextstart()
+        This method runs exactly once to mark the switch between prenext and next.
     next()
         The method used for all remaining data points once the minimum period of all data/indicators has been met.
     stop()
@@ -154,6 +158,19 @@ class CrossoverStrategy(bt.Strategy):
         self.start_date = start_date
         print("Strategy start date: " + str(self.start_date))
 
+    def nextstart(self):
+        """This method runs exactly once to mark the switch between prenext and next.
+
+        Parameters
+        ----------
+
+        Raises
+        ------
+
+        """
+        self.d_with_len = self.datas
+        self.next()
+
     def prenext(self):
         """The method is used when all data points are not available.
 
@@ -164,6 +181,7 @@ class CrossoverStrategy(bt.Strategy):
         ------
 
         """
+        self.d_with_len = [d for d in self.datas if len(d)]
         self.next()
 
     def next(self):
@@ -186,7 +204,7 @@ class CrossoverStrategy(bt.Strategy):
             self.log(f'Cash: {self.broker.get_cash():.2f}, '
                      f'Equity: {self.broker.get_value() - self.broker.get_cash():.2f} '
                      f'Cash %: {cash_percent:.2f}, Positions: {position_count}', dt)
-        for i, d in enumerate(self.datas):
+        for i, d in enumerate(self.d_with_len):
             dn = d._name
             # if there are no orders already for this ticker
             if not self.o.get(d, None):
