@@ -3,7 +3,7 @@ import backtrader as bt
 
 class CustomSizer(bt.Sizer):
     """
-    A class that contains the trading strategy.
+    A class that contains the logic for the order sizing.
 
     Attributes
     ----------
@@ -26,6 +26,14 @@ class CustomSizer(bt.Sizer):
 
         Parameters
         ----------
+        comminfo : CustomCommissionScheme.CustomCommissionScheme
+            The commission scheme.
+        cash : float
+            The available cash.
+        data : TickerData.TickerData
+            The asset being considered for the order.
+        isbuy : bool
+            A flag indicating if the order is a buy order.
 
         Raises
         ------
