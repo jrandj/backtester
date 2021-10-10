@@ -28,14 +28,14 @@ The following assumptions or decisions have been made:
 1. The relative sizing of any order is 2% of the starting cash if possible, else 2% of the remaining cash.
 1. There is a limit of 50 open positions and 1 open position only per asset.
 1. Slippage is 0%.
-1. When an order is executed, the price of the current bar is used (this is called "cheat-on-close" in the backtrader framework documentation). In reality, the price from the next bar should be used. This is done to simplify sizing of the orders. When looking at the strategy logs this can be observed with the value of an order corresponding to the price on the *previous* day and not the day on which the order is executed.
+1. When an order is executed, the price of the asset is taken to be the opening price of the asset on that day (the day after the signal was generated).
 1. Orders from trading do not impact the market price.
 
 ### Trend-Following Strategies
 
 These are the most common algorithmic trading strategies which follow trends in moving averages, channel breakouts, price level movements, and related technical indicators.
 
-An implementation of a 50-day and 200-day moving average cross-over strategy is available in [CrossoverStrategy](CrossoverStrategy.py). This implementation is long only. This strategy when run for all data (2,172 stocks with 456 discarded due to insufficient data quantity) returns a CAGR of 8.76%. This outperforms the XJO benchmark for this period by 3.71%.
+An implementation of a 50-day and 200-day moving average cross-over strategy is available in [CrossoverStrategy](CrossoverStrategy.py). This implementation is long only. This strategy when run for all data (2,172 stocks with 456 discarded due to insufficient data quantity for SMA indicators) returns a CAGR of 8.92%. This outperforms the XJO benchmark for this period by 3.87%.
 
 ### Arbitrage Opportunities
 
@@ -47,7 +47,11 @@ These strategies aim to profit from index funds which are required to periodical
 
 ### Mathematical Model-based Strategies
 
-These strategies use mathematical models such as the delta-neutral trading strategy. Delta neutral is a portfolio strategy consisting of multiple positions with offsetting positive and negative deltas. Delta is the ratio that compares the change in the price of an asset, to the corresponding change in the price of its derivative. 
+These strategies use mathematical models such as the delta-neutral trading strategy. Delta neutral is a portfolio strategy consisting of multiple positions with offsetting positive and negative deltas. Delta is the ratio that compares the change in the price of an asset, to the corresponding change in the price of its derivative.
+
+### Pairs Trading
+
+This strategy finds 2 assets whose prices have historically moved together. The difference between their prices is tracked, and, if it widens, buy the loser and short the winner. If the relationship persists, the long and/or short leg will deliver profits as prices converge and the positions are closed. This approach extends to a multivariate context by forming baskets from multiple securities and pairing assets from the baskets against each other.
 
 ### Mean Reversion
 

@@ -34,8 +34,14 @@ class Backtester:
         True if quantstats reports are to be generated, False otherwise.
     start_date : str
         The override start date from configuration used to trim the data range.
-    end_date : tbc
+    end_date : str
         The override end date from configuration used to trim the data range.
+    cheat_on_close : str
+        True if cheat on close functionality is to be used, False otherwise. If cheat on close functionality is enabled,
+        the close price from the day of the signal is used in the order. If cheat on close functionality is not
+        enabled, the open price of the next day is used in the order. It is more realistic not to use this
+        functionality but it means the order sizing is more complex as you don't know the price of execution when
+        sizing the order.
     data : pandas.core.frame.DataFrame
         The dataframe containing all OHCLV ticker data.
     benchmark_data : pandas.core.frame.DataFrame
@@ -354,6 +360,7 @@ class Backtester:
         self.global_settings()
         self.cash = float(self.config['broker']['cash'])
         self.bulk = self.config['data']['bulk']
+        self.cheat_on_close = self.config['options']['cheat_on_close']
         self.reports = self.config['options']['reports']
         self.start_date = self.config['data']['start_date']
         self.end_date = self.config['data']['end_date']
@@ -369,7 +376,8 @@ class Backtester:
 
         # run the strategy
         self.cerebro = bt.Cerebro(stdstats=False)
-        self.cerebro.broker.set_coc(True)
+        if self.cheat_on_close == 'True':
+            self.cerebro.broker.set_coc(True)
         self.strategy_results = self.run_strategy()
         self.portfolio_stats = self.strategy_results[0].analyzers.getbyname('pyfolio')
         self.returns, self.positions, self.transactions, self.gross_lev = self.portfolio_stats.get_pf_items()
@@ -379,7 +387,7 @@ class Backtester:
 
         # run the benchmark
         self.cerebro_benchmark = bt.Cerebro(stdstats=False)
-        self.cerebro_benchmark.broker.set_coc(True)
+        # self.cerebro_benchmark.broker.set_coc(True)
         self.benchmark_results = self.run_benchmark()
         self.benchmark_stats = self.benchmark_results[0].analyzers.getbyname('pyfolio')
         self.benchmark_returns, self.benchmark_positions, self.benchmark_transactions, self.benchmark_gross_lev = self.benchmark_stats.get_pf_items()

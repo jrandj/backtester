@@ -126,9 +126,9 @@ class CrossoverStrategy(bt.Strategy):
                 v = order.executed.value
                 c = order.executed.comm
                 if order.isbuy():
-                    self.log(f'{dn},BUY executed, Price:{p:.6f}, Cost: {v:.6f}, Comm: {c:.6f}', dt)
+                    self.log(f'{dn},BUY executed, Price: {p:.6f}, Cost: {v:.6f}, Comm: {c:.6f}', dt)
                 elif order.issell():
-                    self.log(f'{dn},SELL executed, Price:{p:.6f}, Cost: {v:.6f}, Comm: {c:.6f}', dt)
+                    self.log(f'{dn},SELL executed, Price: {p:.6f}, Cost: {v:.6f}, Comm: {c:.6f}', dt)
         elif order.status == order.Canceled and self.p.verbose:
             self.log(f'{dn},Order Canceled', dt)
         elif order.status == order.Margin and self.p.verbose:
@@ -200,18 +200,20 @@ class CrossoverStrategy(bt.Strategy):
             if self.broker.getposition(position).size > 0:
                 position_count = position_count + 1
         cash_percent = 100 * (self.broker.get_cash() / self.broker.get_value())
-        if self.p.verbose:
-            self.log(f'Cash: {self.broker.get_cash():.2f}, '
-                     f'Equity: {self.broker.get_value() - self.broker.get_cash():.2f} '
-                     f'Cash %: {cash_percent:.2f}, Positions: {position_count}', dt)
+        # if self.p.verbose:
+        #     self.log(f'Cash: {self.broker.get_cash():.2f}, '
+        #              f'Equity: {self.broker.get_value() - self.broker.get_cash():.2f} '
+        #              f'Cash %: {cash_percent:.2f}, Positions: {position_count}', dt)
         for i, d in enumerate(self.d_with_len):
             dn = d._name
+            # self.log(f'{dn} has close: {d.close[0]} and open {d.open[0]}', dt)
             # if there are no orders already for this ticker
             if not self.o.get(d, None):
                 # check the signals
                 if self.inds[d]['cross'] == 1:
                     if not self.getposition(d).size:
                         if position_count < self.params.position_limit:
+                            # self.log(f'Buying {dn} with close: {d.close[0]} or open {d.open[0]}', dt)
                             self.o[d] = self.buy(data=d)
                         else:
                             self.log('Cannot buy ' + dn + ' as I have ' + str(position_count) + ' positions already',
