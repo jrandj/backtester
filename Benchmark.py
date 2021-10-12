@@ -69,11 +69,12 @@ class Benchmark(bt.Strategy):
         ------
 
         """
+        dt = self.datetime.date()
         self.start_val = self.broker.get_cash()
         self.start_date = self.datas[0].datetime.date(1)
         print("Benchmark start date: " + str(self.start_date))
 
-        # unfortunately the AllInSizer does not work with cheat on close (so need to calculate order size manually)
+        # estimate commission based on today's close price
         if self.broker.get_cash() <= 5000:
             commission = 14.95
         elif 5000 < self.broker.get_cash() < 20000:
@@ -81,7 +82,12 @@ class Benchmark(bt.Strategy):
         else:
             commission = 0.0011 * self.broker.get_cash()
         size = int((self.broker.get_cash() - commission) / self.data)
-        self.buy(size=size)
+
+        # attempt to account for slippage against tomorrow's open
+        size = int(0.995 * size)
+        self.log(f'Creating Buy order with price {self.data.lines.close[0]}, size {size}, '
+                 'and commission {commission}', dt)
+        self.o = self.buy(size=size)
 
     def notify_order(self, order):
         """Handle orders and provide a notification from the broker based on the order.
@@ -96,34 +102,21 @@ class Benchmark(bt.Strategy):
 
         """
         dt, dn = self.datetime.date(), order.data._name
-        if order.status == order.Submitted:
-            self.log(f'{dn},Order Submitted', dt)
-            return
-        elif order.status == order.Accepted:
-            self.log(f'{dn},Order Accepted', dt)
-            return
-        elif order.status == order.Completed:
-            if self.p.verbose:
-                p = order.executed.price
-                v = order.executed.value
-                c = order.executed.comm
-                if order.isbuy():
-                    self.log(f'{dn},BUY executed, Price:{p:.6f}, Cost: {v:.6f}, Comm: {c:.6f}', dt)
-                elif order.issell():
-                    self.log(f'{dn},SELL executed, Price:{p:.6f}, Cost: {v:.6f}, Comm: {c:.6f}', dt)
-        elif order.status == order.Canceled and self.p.verbose:
-            self.log(f'{dn},Order Canceled', dt)
-        elif order.status == order.Margin and self.p.verbose:
-            p = order.executed.price
-            v = order.executed.value
-            c = order.executed.comm
-            self.log(f'{dn},Order Margin', dt)
-        elif order.status == order.Rejected and self.p.verbose:
-            self.log(f'{dn},Order Rejected', dt)
-        elif order.status == order.Partial and self.p.verbose:
-            self.log(f'{dn},Order Partial', dt)
-        elif order.status == order.Expired and self.p.verbose:
-            self.log(f'{dn},Order Expired', dt)
+        if order.isbuy():
+            order_type = 'BUY'
+        else:
+            order_type = 'SELL'
+        executed_price = order.executed.price
+        executed_value = order.executed.value
+        executed_commission = order.executed.comm
+        created_price = order.created.price
+        created_value = order.created.value
+        created_commission = order.created.comm
+        self.log(
+            f'{dn},{order_type} executed,Status: {order.getstatusname()},Executed Price: {executed_price:.6f},'
+            f'Executed Value: {executed_value:.6f},Executed Commission: {executed_commission:.6f},'
+            f'Created Price: {created_price:.6f},Created Value: {created_value:.6f},'
+            f'Created Commission: {created_commission:.6f}', dt)
 
     def stop(self):
         """Runs when the strategy stops. Record the final value of the portfolio and calculate the CAGR.

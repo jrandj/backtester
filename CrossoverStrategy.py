@@ -111,34 +111,26 @@ class CrossoverStrategy(bt.Strategy):
 
         """
         dt, dn = self.datetime.date(), order.data._name
+        if order.isbuy():
+            order_type = 'BUY'
+        else:
+            order_type = 'SELL'
+        executed_price = order.executed.price
+        executed_value = order.executed.value
+        executed_commission = order.executed.comm
+        created_price = order.created.price
+        created_value = order.created.value
+        created_commission = order.created.comm
+        self.log(
+            f'{dn},{order_type} executed,Status: {order.getstatusname()},Executed Price: {executed_price:.6f},'
+            f'Executed Value: {executed_value:.6f},Executed Commission: {executed_commission:.6f},'
+            f'Created Price: {created_price:.6f},Created Value: {created_value:.6f},'
+            f'Created Commission: {created_commission:.6f}', dt)
 
-        if order.status == order.Submitted:
-            self.log(f'{dn},Order Submitted', dt)
-            return
-        elif order.status == order.Accepted:
-            self.log(f'{dn},Order Accepted', dt)
-            return
-        elif order.status == order.Completed:
-            # allow orders for this ticker again
+        # allow orders again based on certain order statuses
+        if order.status in [order.Partial, order.Margin, order.Expired, order.Completed, order.Rejected]:
             self.o[order.data] = None
-            if self.p.verbose:
-                p = order.executed.price
-                v = order.executed.value
-                c = order.executed.comm
-                if order.isbuy():
-                    self.log(f'{dn},BUY executed, Price: {p:.6f}, Cost: {v:.6f}, Comm: {c:.6f}', dt)
-                elif order.issell():
-                    self.log(f'{dn},SELL executed, Price: {p:.6f}, Cost: {v:.6f}, Comm: {c:.6f}', dt)
-        elif order.status == order.Canceled and self.p.verbose:
-            self.log(f'{dn},Order Canceled', dt)
-        elif order.status == order.Margin and self.p.verbose:
-            self.log(f'{dn},Order Margin', dt)
-        elif order.status == order.Rejected and self.p.verbose:
-            self.log(f'{dn},Order Rejected', dt)
-        elif order.status == order.Partial and self.p.verbose:
-            self.log(f'{dn},Order Partial', dt)
-        elif order.status == order.Expired and self.p.verbose:
-            self.log(f'{dn},Order Expired', dt)
+            self.log(f'{dn} order available again as status was {order.getstatusname()}', dt)
 
     def start(self):
         """Runs at the start. Records starting portfolio value and time.

@@ -258,7 +258,6 @@ class Backtester:
         self.cerebro.addanalyzer(bt.analyzers.PyFolio, _name='pyfolio')
         self.cerebro.addstrategy(CrossoverStrategy, verbose=True, log_file='strategy_log.csv')
         self.cerebro.addsizer(CustomSizer, percents=2)
-        # self.cerebro.addsizer(bt.sizers.PercentSizer, percents=2)
         print("Running strategy...")
         if self.config['options']['vectorised'] == 'True':
             results = self.cerebro.run(runonce=True)
