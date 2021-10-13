@@ -121,11 +121,16 @@ class CrossoverStrategy(bt.Strategy):
         created_price = order.created.price
         created_value = order.created.value
         created_commission = order.created.comm
+
         self.log(
             f'{dn},{order_type} executed,Status: {order.getstatusname()},Executed Price: {executed_price:.6f},'
             f'Executed Value: {executed_value:.6f},Executed Commission: {executed_commission:.6f},'
             f'Created Price: {created_price:.6f},Created Value: {created_value:.6f},'
             f'Created Commission: {created_commission:.6f}', dt)
+
+        if order.status == order.Completed:
+            self.log(f'{dn},Completed with slippage (executed_price/created_price)'
+                     f': {100 * (executed_price / created_price):.2f}%', dt)
 
         # allow orders again based on certain order statuses
         if order.status in [order.Partial, order.Margin, order.Expired, order.Completed, order.Rejected]:
@@ -206,6 +211,7 @@ class CrossoverStrategy(bt.Strategy):
                     if not self.getposition(d).size:
                         if position_count < self.params.position_limit:
                             # self.log(f'Buying {dn} with close: {d.close[0]} or open {d.open[0]}', dt)
+                            # self.o[d] = [self.buy(data=d), d.close.get(size=1, ago=-1)[0]]
                             self.o[d] = self.buy(data=d)
                         else:
                             self.log('Cannot buy ' + dn + ' as I have ' + str(position_count) + ' positions already',

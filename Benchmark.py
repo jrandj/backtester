@@ -85,8 +85,8 @@ class Benchmark(bt.Strategy):
 
         # attempt to account for slippage against tomorrow's open
         size = int(0.995 * size)
-        self.log(f'Creating Buy order with price {self.data.lines.close[0]}, size {size}, '
-                 'and commission {commission}', dt)
+        self.log(f'Creating Buy order with price {self.data.lines.close[0]}, size {size}, and commission {commission}',
+                 dt)
         self.o = self.buy(size=size)
 
     def notify_order(self, order):
@@ -117,6 +117,10 @@ class Benchmark(bt.Strategy):
             f'Executed Value: {executed_value:.6f},Executed Commission: {executed_commission:.6f},'
             f'Created Price: {created_price:.6f},Created Value: {created_value:.6f},'
             f'Created Commission: {created_commission:.6f}', dt)
+
+        if order.status == order.Completed:
+            self.log(f'{dn},Completed with slippage (executed_price/created_price)'
+                     f': {100 * (executed_price / created_price):.2f}%', dt)
 
     def stop(self):
         """Runs when the strategy stops. Record the final value of the portfolio and calculate the CAGR.

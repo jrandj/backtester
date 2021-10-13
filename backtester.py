@@ -386,7 +386,6 @@ class Backtester:
 
         # run the benchmark
         self.cerebro_benchmark = bt.Cerebro(stdstats=False)
-        # self.cerebro_benchmark.broker.set_coc(True)
         self.benchmark_results = self.run_benchmark()
         self.benchmark_stats = self.benchmark_results[0].analyzers.getbyname('pyfolio')
         self.benchmark_returns, self.benchmark_positions, self.benchmark_transactions, self.benchmark_gross_lev = self.benchmark_stats.get_pf_items()
