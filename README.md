@@ -25,57 +25,45 @@ Multiple algorithmic trading strategies have been tested below.
 The following assumptions or decisions have been made:
 
 1. The brokerage commission fee structure is as per [Nabtrade](https://www.nabtrade.com.au/investor/pricing). This is assumed to have been available historically.
-1. The relative sizing of any order is 2% of the starting cash if possible, else 2% of the remaining cash.
+1. The relative sizing of any order is 2% of the starting cash, if possible, else 2% of the remaining cash.
 1. There is a limit of 50 open positions and 1 open position only per asset.
 1. Slippage is 0%.
 1. When an order is executed, the price of the asset is taken to be the opening price of the asset on that day (the day after the signal was generated).
 1. Orders from trading do not impact the market price.
 
-### Trend-Following Strategies
+### Time Series Models
 
-These are the most common algorithmic trading strategies which follow trends in moving averages, channel breakouts, price level movements, and related technical indicators.
+These models extract signals from a time series history to predict future values for the same time series.
 
-An implementation of a 50-day and 200-day moving average cross-over strategy is available in [CrossoverStrategy](CrossoverStrategy.py). This implementation is long only. This strategy when run for all data (2,172 stocks with 456 discarded due to insufficient data quantity for SMA indicators) returns a CAGR of 8.92%. This outperforms the XJO benchmark for this period by 3.87%.
+#### Price-Momentum
 
-### Arbitrage Opportunities
+An implementation of a 50-day and 200-day moving average crossover strategy is available in [CrossoverStrategy](CrossoverStrategy.py). This implementation is long only. This strategy when run for all data (2,172 stocks with 456 discarded due to insufficient data quantity for SMA indicators) returns a CAGR of 7.79%. This outperforms the XJO benchmark for this period by 2.76%.
 
-These strategies intend to profit from differences in prices for dual-listed stocks between exchanges, or between stocks and futures.
+### Statistical Arbitrage
 
-### Index Fund Rebalancing
+#### Pairs Trading
 
-These strategies aim to profit from index funds which are required to periodically rebalance their holdings according to their respective benchmark.
+This strategy finds assets whose prices have historically moved together. The difference between assets these is tracked, and, if it widens, a long position is taken on the loser and a short position is taken on the winner. If the relationship persists, the long and/or short leg will deliver profits as prices converge and the positions are closed.
 
-### Mathematical Model-based Strategies
+### Machine Learning
 
-These strategies use mathematical models such as the delta-neutral trading strategy. Delta neutral is a portfolio strategy consisting of multiple positions with offsetting positive and negative deltas. Delta is the ratio that compares the change in the price of an asset, to the corresponding change in the price of its derivative.
+#### Decision Trees
 
-### Pairs Trading
+Decision trees are a machine learning algorithm that predicts the value of a target variable based on decision rules learned from data.
 
-This strategy finds 2 assets whose prices have historically moved together. The difference between their prices is tracked, and, if it widens, buy the loser and short the winner. If the relationship persists, the long and/or short leg will deliver profits as prices converge and the positions are closed. This approach extends to a multivariate context by forming baskets from multiple securities and pairing assets from the baskets against each other.
+#### Random Forests
 
-### Mean Reversion
+Random forests are combinations of many individual decision trees with randomly varied designs to address overfitting and high variance problems.
 
-These strategies are based on the concept that the high and low prices of an asset are a temporary phenomenon that revert to their mean value periodically.
+#### Feedforward Neural Networks
 
-### Volume-weighted Average Price (VWAP)
+#### Recurrent Neural Networks
 
-This strategy breaks up a large order and releases dynamically determined smaller chunks of the order to the market using stock-specific historical volume profiles. The aim is to execute the order close to the volume-weighted average price (VWAP).
+### Other
 
-### Time Weighted Average Price (TWAP)
+#### Index Fund Rebalancing
 
-This strategy breaks up a large order and releases dynamically determined smaller chunks of the order to the market using evenly divided time slots between a start and end time. The aim is to execute the order close to the average price between the start and end times thereby minimising market impact.
-
-### Percentage of Volume (POV)
-
-This strategy executes the order quantity as a percentage of the trade volume of the stock. This is is typically used for large orders to minimise the impact to the market price.
-
-### Implementation Shortfall
-
-This strategy aims to minimise the execution cost of an order by trading off the real-time market. Slippage is the difference in price between the cost at the point of entry or exit from a trade and the actual price at the exchange.
-
-### Advanced
-
-Front-running strategies can be used by a sell-side market maker to profit from large orders on the buy side. Generally, the practice of front-running is considered illegal.
+This strategy aims to profit from index funds which are required to periodically rebalance their holdings according to their respective benchmark.
 
 ## Getting Started
 
@@ -87,6 +75,7 @@ The following pre-requisites are required:
 1. [Anaconda](https://www.anaconda.com/products/individual).
 
 Once these are installed:
+
 1. Open the Anaconda Prompt.
 1. Run `where conda` and note the folder paths (excluding the file name component).
 1. Add these folder paths to the PATH environment variable.
