@@ -13,6 +13,8 @@ from yahooquery import Ticker
 from CustomSizer import CustomSizer
 from TickerData import TickerData
 from CrossoverStrategy import CrossoverStrategy
+from PumpStrategy import PumpStrategy
+from PairStrategy import PairStrategy
 from Benchmark import Benchmark
 from CustomCommissionScheme import CustomCommissionScheme
 
@@ -322,7 +324,6 @@ class Backtester:
                 return pd.datetime.strptime(x, "%d/%m/%Y")
 
             for file_name in all_files:
-
                 if file_name != os.path.join(directory, self.config['data']['benchmark'] + os.extsep + "csv"):
                     x = pd.read_csv(file_name, names=["date", "open", "high", "low", "close", "volume", "ticker"],
                                     parse_dates=["date"], dayfirst=True, dtype={"ticker": str}, skiprows=1,
@@ -342,9 +343,9 @@ class Backtester:
         comparison_start = max(data['date'].min(), benchmark_data['date'].min())
         comparison_end = min(data['date'].max(), benchmark_data['date'].max())
         # allow override from config
-        if len(self.start_date) > 0 and pd.to_datetime(self.start_date) < comparison_end:
+        if len(self.start_date) > 0 and pd.to_datetime(self.start_date, format='%d/%m/%Y') < comparison_end:
             comparison_start = pd.to_datetime(self.start_date)
-        if len(self.end_date) > 0 and pd.to_datetime(self.end_date) > comparison_start:
+        if len(self.end_date) > 0 and pd.to_datetime(self.end_date, format='%d/%m/%Y') > comparison_start:
             comparison_end = pd.to_datetime(self.end_date)
         data = data[(data['date'] > comparison_start) & (data['date'] < comparison_end)]
         benchmark_data = benchmark_data[
