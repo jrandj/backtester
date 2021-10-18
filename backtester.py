@@ -292,6 +292,25 @@ class Backtester:
         except OSError:
             pass
 
+    def find_correlation(self):
+        """TBC.
+
+        Parameters
+        ----------
+
+        Raises
+        ------
+
+        """
+        self.data = self.data.set_index('date')
+        # correlation_data = self.data.set_index('date')
+        returns_matrix = pd.DataFrame(index=self.data.index, columns=self.tickers)
+        for ticker in self.tickers:
+            ticker_data = self.data.loc[self.data['ticker'] == ticker]
+            returns_matrix[ticker] = ticker_data['close'].pct_change()
+            print(f"adding {ticker}")
+        correlation_matrix = returns_matrix.corr()
+
     def import_data(self):
         """Import OHLCV data. Read from a consolidated hdf file if available, else read from a consolidated .csv file,
         else consolidate the data from various .csv files.
@@ -376,6 +395,8 @@ class Backtester:
             self.tickers = self.data['ticker'].unique()
         else:
             self.tickers = self.config['data']['tickers'].split(',')
+
+        # self.find_correlation()
 
         # run the strategy
         self.cerebro = bt.Cerebro(stdstats=False)
