@@ -237,7 +237,7 @@ class Backtester:
         # self.cerebro_benchmark.addsizer(bt.sizers.AllInSizer)
         print("Running benchmark...")
         results = self.cerebro_benchmark.run()  # runonce=False
-        if self.config['options']['plot_enabled'] == 'True':
+        if self.config['options']['plot_benchmark'] == 'True':
             self.cerebro_benchmark.plot(volume=False)
         return results
 
