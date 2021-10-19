@@ -249,7 +249,8 @@ class Backtester:
 
         Raises
         ------
-
+        ValueError:
+            If the Strategy from config is not implemented.
         """
         self.cerebro.broker.addcommissioninfo(self.comminfo)
         self.cerebro.broker.setcash(self.cash)
@@ -258,7 +259,12 @@ class Backtester:
         self.cerebro.addobserver(bt.observers.Broker)
         self.cerebro.addobserver(bt.observers.Trades)
         self.cerebro.addanalyzer(bt.analyzers.PyFolio, _name='pyfolio')
-        self.cerebro.addstrategy(CrossoverStrategy, verbose=True, log_file='strategy_log.csv')
+        if self.config['options']['strategy'] == 'Pump':
+            self.cerebro.addstrategy(PumpStrategy, verbose=True, log_file='strategy_log.csv')
+        elif self.config['options']['strategy'] == 'Crossover':
+            self.cerebro.addstrategy(CrossoverStrategy, verbose=True, log_file='strategy_log.csv')
+        else:
+            raise ValueError(f"Strategy {self.config['options']['strategy']} must be Pump or Crossover.")
         self.cerebro.addsizer(CustomSizer, percents=2)
         print("Running strategy...")
         if self.config['options']['vectorised'] == 'True':
