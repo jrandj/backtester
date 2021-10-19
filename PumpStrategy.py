@@ -210,11 +210,11 @@ class PumpStrategy(bt.Strategy):
                     condition_a = self.params.volume_factor * d.volume[0] > self.inds[d]['volume_average'][0]
                     condition_b = 0.95 < (d.high[0] / d.close.get(size=1, ago=-1)[0]) < 1.10
                     condition_c = d.close[0] >= self.inds[d]['price_max'][0]
-                    print(
-                        f"today {dt} for {dn}: condition_a: {condition_a} condition_b: {condition_b} condition_c: {condition_c}")
-                    print(f"today {dt} for {dn}: condition_a details: {d.volume[0] * self.params.volume_factor} > {self.inds[d]['volume_average'][0]}")
-                    print(f"today {dt} for {dn}: condition_b details: {(d.high[0] / d.close.get(size=1, ago=-1)[0])}")
-                    print(f"today {dt} for {dn}: condition_c details: {d.close[0]} >= {self.inds[d]['price_max'][0]}")
+                    self.log(f"{dn}: {condition_a} {condition_b} {condition_c}", dt)
+                    self.log(f"{dn}: condition_a details: "
+                             f"{d.volume[0] * self.params.volume_factor} > {self.inds[d]['volume_average'][0]}", dt)
+                    self.log(f"{dn}: condition_b details: {(d.high[0] / d.close.get(size=1, ago=-1)[0])}", dt)
+                    self.log(f"{dn}: condition_c details: {d.close[0]} >= {self.inds[d]['price_max'][0]}", dt)
 
                     if condition_a and condition_b and condition_c:
                         if not self.getposition(d).size:
