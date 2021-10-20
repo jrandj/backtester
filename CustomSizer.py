@@ -13,7 +13,7 @@ class CustomSizer(bt.Sizer):
     Methods
     -------
     _getsizing()
-        Returns the number of shares to purchase. Attempts to use 1/50th of the available cash.
+        Returns the number of shares to purchase.
     """
     params = (
         ('percents', 2),
@@ -22,7 +22,7 @@ class CustomSizer(bt.Sizer):
     )
 
     def _getsizing(self, comminfo, cash, data, isbuy):
-        """Returns the number of shares to purchase. Attempts to use 1/50th of the available cash.
+        """Returns the number of shares to purchase.
 
         Parameters
         ----------
@@ -39,10 +39,12 @@ class CustomSizer(bt.Sizer):
         ------
 
         """
-        if cash > self.params.starting_cash / 50:
-            size = (self.params.starting_cash / 50) / data.close[0]
+        # use a percentage of the starting cash if possible (to keep the total amount neat)
+        if cash > (self.params.starting_cash * self.params.percents) / 100:
+            size = (self.params.starting_cash * self.params.percents) / (100 * data.close[0])
+        # otherwise use a percentage of the remaining cash
         else:
-            size = cash / data.close[0] * (self.params.percents / 100)
+            size = (100 * cash / data.close[0] * self.params.percents)
 
         if self.params.retint:
             size = int(size)
