@@ -265,7 +265,7 @@ class Backtester:
             self.cerebro.addstrategy(CrossoverStrategy, verbose=True, log_file='strategy_log.csv')
         else:
             raise ValueError(f"Strategy {self.config['options']['strategy']} must be Pump or Crossover.")
-        self.cerebro.addsizer(CustomSizer, percents=2)
+        self.cerebro.addsizer(CustomSizer, percents=float(self.config['options']['position_size']))
         print("Running strategy...")
         if self.config['options']['vectorised'] == 'True':
             results = self.cerebro.run(runonce=True)
