@@ -72,7 +72,7 @@ class Benchmark(bt.Strategy):
         dt = self.datetime.date()
         self.start_val = self.broker.get_cash()
         self.start_date = self.datas[0].datetime.date(1)
-        print("Benchmark start date: " + str(self.start_date))
+        print(f"Benchmark start date: {self.start_date}")
 
         # estimate commission based on today's close price
         if self.broker.get_cash() <= 5000:
@@ -85,7 +85,7 @@ class Benchmark(bt.Strategy):
 
         # attempt to account for slippage against tomorrow's open
         size = int(0.995 * size)
-        self.log(f'Creating Buy order with price {self.data.lines.close[0]}, size {size}, and commission {commission}',
+        self.log(f"Creating Buy order with price {self.data.lines.close[0]}, size {size}, and commission {commission}",
                  dt)
         self.o = self.buy(size=size)
 
@@ -113,14 +113,14 @@ class Benchmark(bt.Strategy):
         created_value = order.created.value
         created_commission = order.created.comm
         self.log(
-            f'{dn},{order_type} executed,Status: {order.getstatusname()},Executed Price: {executed_price:.6f},'
-            f'Executed Value: {executed_value:.6f},Executed Commission: {executed_commission:.6f},'
-            f'Created Price: {created_price:.6f},Created Value: {created_value:.6f},'
-            f'Created Commission: {created_commission:.6f}', dt)
+            f"{dn},{order_type} executed,Status: {order.getstatusname()},Executed Price: {executed_price:.6f},"
+            f"Executed Value: {executed_value:.6f},Executed Commission: {executed_commission:.6f},"
+            f"Created Price: {created_price:.6f},Created Value: {created_value:.6f},"
+            f"Created Commission: {created_commission:.6f}", dt)
 
         if order.status == order.Completed:
-            self.log(f'{dn},Completed with slippage (executed_price/created_price)'
-                     f': {100 * (executed_price / created_price):.2f}%', dt)
+            self.log(f"{dn},Completed with slippage (executed_price/created_price)"
+                     f": {100 * (executed_price / created_price):.2f}%", dt)
 
     def stop(self):
         """Runs when the strategy stops. Record the final value of the portfolio and calculate the CAGR.
@@ -133,10 +133,10 @@ class Benchmark(bt.Strategy):
 
         """
         self.end_date = self.datas[0].datetime.date(0)
-        print("Benchmark end date: " + str(self.end_date))
+        print(f"Benchmark end date: {self.end_date}")
         self.elapsed_days = (self.end_date - self.start_date).days
         self.end_val = self.broker.get_value()
         self.cagr = 100 * ((self.end_val / self.start_val) ** (
                 1 / (self.elapsed_days / 365.25)) - 1)
-        print(f'Benchmark CAGR: {self.cagr:.4f}% (over {(self.elapsed_days / 365.25):.2f} years)')
-        print('Benchmark Portfolio Value: ' + str(self.end_val))
+        print(f"Benchmark CAGR: {self.cagr:.4f}% (over {(self.elapsed_days / 365.25):.2f} years)")
+        print(f"Benchmark Portfolio Value: {self.end_val}")

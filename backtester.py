@@ -140,7 +140,7 @@ class Backtester:
         ------
 
         """
-        print("Adding ticker to benchmark: " + 'XJO')
+        print(f"Adding ticker to benchmark: XJO")
         self.cerebro_benchmark.adddata(
             TickerData(dataname=self.benchmark_data.loc[self.benchmark_data['ticker'] == 'XJO']), name='XJO')
 
@@ -164,28 +164,25 @@ class Backtester:
             ticker_data = self.data.loc[self.data['ticker'] == ticker]
             if self.config['options']['vectorised'] == 'True':
                 if ticker_data['date'].size > minimum_size_vectorised_true:
-                    print("Adding ticker to strategy: " + ticker + " with " + str(ticker_data['date'].size)
-                          + " rows")
+                    print(f"Adding {ticker} to strategy with {ticker_data['date'].size} rows")
                     self.cerebro.adddata(TickerData(dataname=ticker_data), name=ticker)
                     # self.cerebro.datas[index].plotinfo.plot = False
                     index = index + 1
                 else:
                     ignore = ignore + 1
-                    print("Did not add: " + ticker + " to strategy due to insufficient data with only " + str(
-                        ticker_data['date'].size) + " rows")
+                    print(f"Did not add {ticker} to strategy due to insufficient data with only "
+                          f"{ticker_data['date'].size} rows")
             else:
                 if ticker_data['date'].size > minimum_size_vectorised_false:
                     self.cerebro.adddata(TickerData(dataname=ticker_data), name=ticker)
                     # self.cerebro.datas[index].plotinfo.plot = False
-                    print("Adding ticker to strategy: " + ticker + " with " + str(ticker_data['date'].size)
-                          + " rows")
+                    print(f"Adding {ticker} to strategy with {ticker_data['date'].size} rows")
                     index = index + 1
                 else:
                     ignore = ignore + 1
-                    print("Did not add: " + ticker + " to strategy due to insufficient data with only " + str(
-                        ticker_data['date'].size) + " rows")
-
-        print("Loaded data for " + str(index) + " tickers and discarded data for " + str(ignore) + " tickers")
+                    print(f"Did not add {ticker} to strategy due to insufficient data with only "
+                          f"{ticker_data['date'].size} rows")
+        print(f"Loaded data for {index} tickers and discarded data for {ignore} tickers")
 
     def run_strategy_reports(self):
         """Run quantstats reports for the strategy.
@@ -235,7 +232,7 @@ class Backtester:
         self.cerebro_benchmark.addstrategy(Benchmark, verbose=True, log_file='benchmark_log.csv')
         # unfortunately the AllInSizer does not work with cheat on close (so need to calculate order size manually)
         # self.cerebro_benchmark.addsizer(bt.sizers.AllInSizer)
-        print("Running benchmark...")
+        print(f"Running benchmark...")
         results = self.cerebro_benchmark.run()  # runonce=False
         if self.config['options']['plot_benchmark'] == 'True':
             self.cerebro_benchmark.plot(volume=False)
@@ -266,7 +263,7 @@ class Backtester:
         else:
             raise ValueError(f"Strategy {self.config['options']['strategy']} must be Pump or Crossover.")
         self.cerebro.addsizer(CustomSizer, percents=float(self.config['options']['position_size']))
-        print("Running strategy...")
+        print(f"Running {self.config['options']['strategy']} strategy...")
         if self.config['options']['vectorised'] == 'True':
             results = self.cerebro.run(runonce=True)
         else:
@@ -314,7 +311,7 @@ class Backtester:
         for ticker in self.tickers:
             ticker_data = self.data.loc[self.data['ticker'] == ticker]
             returns_matrix[ticker] = ticker_data['close'].pct_change()
-            print(f"adding {ticker}")
+            print(f"Adding {ticker}")
         correlation_matrix = returns_matrix.corr()
 
     def import_data(self):
@@ -336,15 +333,15 @@ class Backtester:
 
         # read data
         if os.path.isfile(os.path.join(directory, "data" + os.extsep + "h5")):
-            print("Reading data from consolidated .h5")
+            print(f"Reading data from consolidated .h5")
             data = pd.read_hdf(os.path.join(directory, "data" + os.extsep + "h5"), 'table')
         elif os.path.isfile(os.path.join(directory, "data" + os.extsep + "csv")):
-            print("Reading data from consolidated .csv")
+            print(f"Reading data from consolidated .csv")
             data = pd.read_csv(os.path.join(directory, "data" + os.extsep + "csv"), header=0, index_col=False,
                                parse_dates=["date"], dayfirst=True)
             data.to_hdf(os.path.join(directory, "data" + os.extsep + "h5"), 'table', append=True)
         else:
-            print("Reading data from .csv in directory and creating consolidated files for future use")
+            print(f"Reading data from .csv in directory and creating consolidated files for future use")
             data = pd.DataFrame()
             all_files = glob.glob(os.path.join(directory, "*.csv"))
 
@@ -378,7 +375,7 @@ class Backtester:
         data = data[(data['date'] > comparison_start) & (data['date'] < comparison_end)]
         benchmark_data = benchmark_data[
             (benchmark_data['date'] > comparison_start) & (benchmark_data['date'] < comparison_end)]
-        print("Data range is between " + str(comparison_start.date()) + " and " + str(comparison_end.date()))
+        print(f"Data range is between {comparison_start.date()} and {comparison_end.date()}")
         return data, benchmark_data
 
     def __init__(self):
@@ -429,7 +426,7 @@ def main():
     start = time.time()
     backtester = Backtester()
     duration = time.time() - start
-    print(f'Runtime: {backtester.format_time(duration)}')
+    print(f"Runtime: {backtester.format_time(duration)}")
 
 
 if __name__ == "__main__":

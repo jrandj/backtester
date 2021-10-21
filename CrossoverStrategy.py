@@ -55,7 +55,7 @@ class CrossoverStrategy(bt.Strategy):
         ('sma1', 50),
         ('sma2', 200),
         ('position_limit', 50),
-        ('log_file', 'strategy.csv')
+        ('log_file', 'CrossoverStrategy.csv')
     )
 
     def __init__(self):
@@ -123,19 +123,19 @@ class CrossoverStrategy(bt.Strategy):
         created_commission = order.created.comm
 
         self.log(
-            f'{dn},{order_type} executed,Status: {order.getstatusname()},Executed Price: {executed_price:.6f},'
-            f'Executed Value: {executed_value:.6f},Executed Commission: {executed_commission:.6f},'
-            f'Created Price: {created_price:.6f},Created Value: {created_value:.6f},'
-            f'Created Commission: {created_commission:.6f}', dt)
+            f"{dn},{order_type} executed,Status: {order.getstatusname()},Executed Price: {executed_price:.6f},"
+            f"Executed Value: {executed_value:.6f},Executed Commission: {executed_commission:.6f},"
+            f"Created Price: {created_price:.6f},Created Value: {created_value:.6f},"
+            f"Created Commission: {created_commission:.6f}", dt)
 
         if order.status == order.Completed:
-            self.log(f'{dn},Completed with slippage (executed_price/created_price)'
-                     f': {100 * (executed_price / created_price):.2f}%', dt)
+            self.log(f"{dn},Completed with slippage (executed_price/created_price)"
+                     f": {100 * (executed_price / created_price):.2f}%", dt)
 
         # allow orders again based on certain order statuses
         if order.status in [order.Partial, order.Margin, order.Expired, order.Completed, order.Rejected]:
             self.o[order.data] = None
-            self.log(f'{dn} order available again as status was {order.getstatusname()}', dt)
+            self.log(f"{dn} order available again as status was {order.getstatusname()}", dt)
 
     def start(self):
         """Runs at the start. Records starting portfolio value and time.
@@ -153,7 +153,7 @@ class CrossoverStrategy(bt.Strategy):
             if data.datetime.date(1) < start_date:
                 start_date = data.datetime.date(1)
         self.start_date = start_date
-        print("Strategy start date: " + str(self.start_date))
+        print(f"Strategy start date: {self.start_date}")
 
     def nextstart(self):
         """This method runs exactly once to mark the switch between prenext and next.
@@ -198,31 +198,30 @@ class CrossoverStrategy(bt.Strategy):
                 position_count = position_count + 1
         cash_percent = 100 * (self.broker.get_cash() / self.broker.get_value())
         # if self.p.verbose:
-        #     self.log(f'Cash: {self.broker.get_cash():.2f}, '
-        #              f'Equity: {self.broker.get_value() - self.broker.get_cash():.2f} '
-        #              f'Cash %: {cash_percent:.2f}, Positions: {position_count}', dt)
+        #     self.log(f"Cash: {self.broker.get_cash():.2f}, "
+        #              f"Equity: {self.broker.get_value() - self.broker.get_cash():.2f} "
+        #              f"Cash %: {cash_percent:.2f}, Positions: {position_count}", dt)
         for i, d in enumerate(self.d_with_len):
             dn = d._name
-            # self.log(f'{dn} has close: {d.close[0]} and open {d.open[0]}', dt)
+            # self.log(f"{dn} has close: {d.close[0]} and open {d.open[0]}", dt)
             # if there are no orders already for this ticker
             if not self.o.get(d, None):
                 # check the signals
                 if self.inds[d]['cross'] == 1:
                     if not self.getposition(d).size:
                         if position_count < self.params.position_limit:
-                            # self.log(f'Buying {dn} with close: {d.close[0]} or open {d.open[0]}', dt)
+                            # self.log(f"Buying {dn} with close: {d.close[0]} or open {d.open[0]}", dt)
                             # self.o[d] = [self.buy(data=d), d.close.get(size=1, ago=-1)[0]]
                             self.o[d] = self.buy(data=d)
                         else:
-                            self.log('Cannot buy ' + dn + ' as I have ' + str(position_count) + ' positions already',
-                                     dt)
+                            self.log(f"Cannot buy {dn} as I have {position_count} positions already", dt)
                     else:
-                        self.log('Cannot buy ' + dn + ' as I am already long', dt)
+                        self.log(f"Cannot buy {dn} as I already long", dt)
                 elif self.inds[d]['cross'] == -1:
                     if self.getposition(d).size:
                         self.o[d] = self.close(data=d)
                     else:
-                        self.log('Cannot sell ' + dn + ' as I am not long', dt)
+                        self.log(f"Cannot sell {dn} as I am not long", dt)
 
     def stop(self):
         """Runs when the strategy stops. Record the final value of the portfolio and calculate the CAGR.
@@ -239,14 +238,13 @@ class CrossoverStrategy(bt.Strategy):
             if data.datetime.date(0) > end_date:
                 end_date = data.datetime.date(0)
         self.end_date = end_date
-        print("Strategy end date: " + str(self.end_date))
-
+        print(f"Strategy end date: {self.end_date}")
         self.elapsed_days = (self.end_date - self.start_date).days
         self.end_val = self.broker.get_value()
         self.cagr = 100 * ((self.end_val / self.start_val) ** (
                 1 / (self.elapsed_days / 365.25)) - 1)
-        print(f'Strategy CAGR: {self.cagr:.4f}% (over {(self.elapsed_days / 365.25):.2f} years)')
-        print('Strategy Portfolio Value: ' + str(self.end_val))
+        print(f"Strategy CAGR: {self.cagr:.4f}% (over {(self.elapsed_days / 365.25):.2f} years)")
+        print(f"Strategy Portfolio Value: {self.end_val}")
 
     def notify_trade(self, trade):
         """Handle trades and provide a notification from the broker based on the trade.
@@ -262,7 +260,6 @@ class CrossoverStrategy(bt.Strategy):
         """
         dt = self.datetime.date()
         if trade.isclosed:
-            self.log("Position in " + trade.data._name + " opened on " + str(trade.open_datetime().date())
-                     + " and closed on " + str(trade.close_datetime().date()) + " with PnL Gross " + str(
-                round(trade.pnl, 2))
-                     + " and PnL Net " + str(round(trade.pnlcomm, 1)), dt)
+            self.log(f"Position in {trade.data_name} opened on {trade.open_datetime().date()} and closed "
+                     f"on {trade.close_datetime().date()} with PnL Gross {trade.pnl:.2f} and PnL Net "
+                     f"{trade.pnlcomm:.2f}", dt)
