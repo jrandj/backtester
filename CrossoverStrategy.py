@@ -182,7 +182,7 @@ class CrossoverStrategy(bt.Strategy):
         self.next()
 
     def next(self):
-        """The method is used all data points once the minimum period of all data/indicators has been met.
+        """The method is used for all data points once the minimum period of all data/indicators has been met.
 
         Parameters
         ----------
@@ -260,6 +260,6 @@ class CrossoverStrategy(bt.Strategy):
         """
         dt = self.datetime.date()
         if trade.isclosed:
-            self.log(f"Position in {trade.data_name} opened on {trade.open_datetime().date()} and closed "
+            self.log(f"Position in {trade.data._name} opened on {trade.open_datetime().date()} and closed "
                      f"on {trade.close_datetime().date()} with PnL Gross {trade.pnl:.2f} and PnL Net "
                      f"{trade.pnlcomm:.2f}", dt)
