@@ -44,7 +44,7 @@ class CustomSizer(bt.Sizer):
             size = (self.params.starting_cash * self.params.percents) / (100 * data.close[0])
         # otherwise use a percentage of the remaining cash
         else:
-            size = (100 * cash / data.close[0] * self.params.percents)
+            size = (cash * self.params.percents) / (data.close[0] * 100)
 
         if self.params.retint:
             size = int(size)
