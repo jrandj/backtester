@@ -1,6 +1,7 @@
 from pathlib import Path
 import backtrader as bt
 import csv
+from collections import defaultdict
 
 
 class PumpStrategy(bt.Strategy):
@@ -53,10 +54,12 @@ class PumpStrategy(bt.Strategy):
     params = (
         ('verbose', True),
         ('volume_average_period', 20),
-        ('price_average_period', 365),
+        ('price_average_period', 45),
+        ('sell_timeout', 30),
+        ('buy_timeout', 30),
         ('volume_factor', 8),
         ('position_limit', 50),
-        ('profit_factor', 1.8),
+        ('profit_factor', 1.5),
         ('log_file', 'PumpStrategy.csv')
     )
 
@@ -70,7 +73,9 @@ class PumpStrategy(bt.Strategy):
         ------
 
         """
-        self.o = dict()
+        self.previous_position_ended = False
+        self.position_dt = defaultdict(dict)
+        self.o = defaultdict(dict)
         self.inds = dict()
         for i, d in enumerate(self.datas):
             self.inds[d] = dict()
@@ -181,7 +186,7 @@ class PumpStrategy(bt.Strategy):
         self.next()
 
     def next(self):
-        """The method is used all data points once the minimum period of all data/indicators has been met.
+        """The method is used for all data points once the minimum period of all data/indicators has been met.
 
         Parameters
         ----------
@@ -205,32 +210,64 @@ class PumpStrategy(bt.Strategy):
             # self.log(f"{dn} has close: {d.close[0]} and open {d.open[0]}", dt)
             # if there are no orders already for this ticker
             if not self.o.get(d, None):
-                # check for buy signal
+                # need data from yesterday
                 if len(d.close.get(size=1, ago=-1)) > 0:
                     condition_a = self.params.volume_factor * d.volume[0] > self.inds[d]['volume_average'][0]
                     condition_b = 0.95 < (d.high[0] / d.close.get(size=1, ago=-1)[0]) < 1.10
                     condition_c = d.close[0] >= self.inds[d]['price_max'][0]
+
                     # self.log(f"{dn}: {condition_a} {condition_b} {condition_c}", dt)
                     # self.log(f"{dn}: condition_a details: "
                     #          f"{d.volume[0] * self.params.volume_factor} > {self.inds[d]['volume_average'][0]}", dt)
                     # self.log(f"{dn}: condition_b details: {(d.high[0] / d.close.get(size=1, ago=-1)[0])}", dt)
                     # self.log(f"{dn}: condition_c details: {d.close[0]} >= {self.inds[d]['price_max'][0]}", dt)
 
+                    # check for buy signal
                     if condition_a and condition_b and condition_c:
+                        # if we don't already have a position
                         if not self.getposition(d).size:
+                            # if the total portfolio positions limit has not been exceeded
                             if position_count < self.params.position_limit:
-                                self.o[d] = self.buy(data=d)
+                                # if we had a position before
+                                if self.previous_position_ended:
+                                    days_elapsed = (dt - self.position_dt[d]['end']).days
+                                    # enforce a timeout period to avoid buying back soon after closing
+                                    if days_elapsed > self.params.buy_timeout:
+                                        self.o[d] = self.buy(data=d)
+                                        self.position_dt[d]['start'] = dt
+                                        self.log(f"Buy {dn} after {days_elapsed} days since"
+                                                 f" close of last position", dt)
+                                    else:
+                                        self.log(f"Did not buy {dn} after only {days_elapsed} days since last hold", dt)
+                                # we did not have a position before
+                                else:
+                                    self.o[d] = self.buy(data=d)
+                                    self.position_dt[d]['start'] = dt
+                                    self.log(f"Buy {dn} for the first time", dt)
                             else:
                                 self.log(f"Cannot buy {dn} as I have {position_count} positions already", dt)
                         else:
                             self.log(f"Cannot buy {dn} as I am already long", dt)
 
-            # take profit
-            if self.getposition(data=d).size:
-                print(f"Today's price is {d.close[0]} and I need sell "
-                      f"{self.params.profit_factor * self.getposition(data=d).price} to sell")
-                if d.close[0] >= self.params.profit_factor * self.getposition(data=d).price:
-                    self.o[d] = self.close(data=d)
+                # consider taking profit if we have a position
+                if self.getposition(data=d).size:
+                    # print(f"Today's price is {d.close[0]:.6f} and I need sell "
+                    #       f"{self.params.profit_factor * self.getposition(data=d).price:.6f} to sell")
+
+                    # take profit based on profit threshold
+                    if d.close[0] >= self.params.profit_factor * self.getposition(data=d).price:
+                        self.o[d] = self.close(data=d)
+                        self.position_dt[d]['end'] = dt
+                        self.previous_position_ended = True
+                        self.log(f"Close {dn} position as {self.params.profit_factor} profit reached", dt)
+
+                    # enforce a timeout to abandon a trade
+                    days_elapsed = (dt - self.position_dt[d]['start']).days
+                    if days_elapsed > self.params.sell_timeout:
+                        self.o[d] = self.close(data=d)
+                        self.position_dt[d]['end'] = dt
+                        self.previous_position_ended = True
+                        self.log(f"Abandon {dn} position after {days_elapsed} days since start of position", dt)
 
     def stop(self):
         """Runs when the strategy stops. Record the final value of the portfolio and calculate the CAGR.
@@ -269,6 +306,6 @@ class PumpStrategy(bt.Strategy):
         """
         dt = self.datetime.date()
         if trade.isclosed:
-            self.log(f"Position in {trade.data_name} opened on {trade.open_datetime().date()} and closed "
+            self.log(f"Position in {trade.data._name} opened on {trade.open_datetime().date()} and closed "
                      f"on {trade.close_datetime().date()} with PnL Gross {trade.pnl:.2f} and PnL Net "
                      f"{trade.pnlcomm:.2f}", dt)
