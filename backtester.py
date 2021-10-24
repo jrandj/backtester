@@ -32,6 +32,8 @@ class Backtester:
         The cash available for the strategies.
     bulk : str
         True if all tickers are to be used, False if the tickers are being provided.
+    small_cap_only : str
+        True if all tickers are to be used, False if only tickers outside of the ASX300 are to be used.
     reports : str
         True if quantstats reports are to be generated, False otherwise.
     start_date : str
@@ -46,6 +48,8 @@ class Backtester:
         sizing the order.
     data : pandas.core.frame.DataFrame
         The dataframe containing all OHCLV ticker data.
+    asx300_constituents : pandas.core.frame.DataFrame
+        The dataframe containing tickers of ASX300 stocks at a point in time.
     benchmark_data : pandas.core.frame.DataFrame
         The dataframe containing the benchmark OHCLV data.
     cerebro : backtrader.cerebro.Cerebro
@@ -331,6 +335,14 @@ class Backtester:
             directory = os.path.join(os.path.dirname(__file__), "data",
                                      self.config['data']['path'])
 
+        # read asx300 constituents data
+        if os.path.isfile(
+                os.path.join(os.path.dirname(__file__), "data", "asx300_constituents_221021" + os.extsep + "csv")):
+            print(f"Reading asx300 as at 22/10/21 constituents from .csv")
+            asx300_constituents = pd.read_csv(
+                os.path.join(os.path.dirname(__file__), "data", "asx300_constituents_221021" + os.extsep + "csv"),
+                index_col=False)
+
         # read data
         if os.path.isfile(os.path.join(directory, "data" + os.extsep + "h5")):
             print(f"Reading data from consolidated .h5")
@@ -376,7 +388,7 @@ class Backtester:
         benchmark_data = benchmark_data[
             (benchmark_data['date'] > comparison_start) & (benchmark_data['date'] < comparison_end)]
         print(f"Data range is between {comparison_start.date()} and {comparison_end.date()}")
-        return data, benchmark_data
+        return data, benchmark_data, asx300_constituents
 
     def __init__(self):
         # set initial configuration
@@ -385,6 +397,7 @@ class Backtester:
         self.global_settings()
         self.cash = float(self.config['broker']['cash'])
         self.bulk = self.config['data']['bulk']
+        self.small_cap_only = self.config['options']['small_cap_only']
         self.cheat_on_close = self.config['options']['cheat_on_close']
         self.reports = self.config['options']['reports']
         self.start_date = self.config['data']['start_date']
@@ -393,9 +406,11 @@ class Backtester:
         self.clean_logs()
 
         # import data
-        self.data, self.benchmark_data = self.import_data()
-        if self.bulk == 'True':
-            self.tickers = self.data['ticker'].unique()
+        self.data, self.benchmark_data, self.asx300_constituents = self.import_data()
+        if self.bulk == 'True' and self.small_cap_only == 'True':
+            self.tickers = set(self.data['ticker'].unique()) - set(self.asx300_constituents['Ticker'])
+        elif self.bulk == 'True' and self.small_cap_only == 'False':
+            all_tickers = self.data['ticker'].unique()
         else:
             self.tickers = self.config['data']['tickers'].split(',')
 
