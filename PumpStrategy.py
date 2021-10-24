@@ -14,6 +14,8 @@ class PumpStrategy(bt.Strategy):
         Parameters for the strategy.
     o : dict
         The orders for all tickers.
+    position_dt : dict
+        Start and end dates from a previous position. Required as the backtrader position object does not support this.
     inds : dict
         The indicators for all tickers.
     start_val : float
@@ -73,7 +75,6 @@ class PumpStrategy(bt.Strategy):
         ------
 
         """
-        self.previous_position_ended = False
         self.position_dt = defaultdict(dict)
         self.o = defaultdict(dict)
         self.inds = dict()
@@ -229,7 +230,7 @@ class PumpStrategy(bt.Strategy):
                             # if the total portfolio positions limit has not been exceeded
                             if position_count < self.params.position_limit:
                                 # if we had a position before
-                                if self.previous_position_ended:
+                                if self.position_dt[d].get('end'):
                                     days_elapsed = (dt - self.position_dt[d]['end']).days
                                     # enforce a timeout period to avoid buying back soon after closing
                                     if days_elapsed > self.params.buy_timeout:
@@ -258,7 +259,6 @@ class PumpStrategy(bt.Strategy):
                     if d.close[0] >= self.params.profit_factor * self.getposition(data=d).price:
                         self.o[d] = self.close(data=d)
                         self.position_dt[d]['end'] = dt
-                        self.previous_position_ended = True
                         self.log(f"Close {dn} position as {self.params.profit_factor} profit reached", dt)
 
                     # enforce a timeout to abandon a trade
@@ -266,7 +266,6 @@ class PumpStrategy(bt.Strategy):
                     if days_elapsed > self.params.sell_timeout:
                         self.o[d] = self.close(data=d)
                         self.position_dt[d]['end'] = dt
-                        self.previous_position_ended = True
                         self.log(f"Abandon {dn} position after {days_elapsed} days since start of position", dt)
 
     def stop(self):
