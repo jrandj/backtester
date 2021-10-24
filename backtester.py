@@ -410,7 +410,7 @@ class Backtester:
         if self.bulk == 'True' and self.small_cap_only == 'True':
             self.tickers = set(self.data['ticker'].unique()) - set(self.asx300_constituents['Ticker'])
         elif self.bulk == 'True' and self.small_cap_only == 'False':
-            all_tickers = self.data['ticker'].unique()
+            self.tickers = self.data['ticker'].unique()
         else:
             self.tickers = self.config['data']['tickers'].split(',')
 
