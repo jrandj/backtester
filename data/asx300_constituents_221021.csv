@@ -1,0 +1,301 @@
+﻿Rank,Ticker,Company,Mkt Cap
+1,CBA,Commonwealth Bank of Australia,178966351323.00
+2,CSL,CSL Ltd,134814960227.00
+3,BHP,BHP Group Ltd,111076964984.00
+4,NAB,National Australia Bank Ltd,94718272237.00
+5,WBC,Westpac Banking Corporation,94429553138.00
+6,ANZ,Australia and New Zealand Banking Group Ltd  ,80310261941.00
+7,MQG,Macquarie Group Ltd,73417940021.00
+8,WES,Wesfarmers Ltd,64980384269.00
+9,WOW,Woolworths Group Ltd,48830482581.00
+10,TLS,Telstra Corporation Ltd,44362000999.00
+11,FMG,Fortescue Metals Group Ltd,44059987977.00
+12,TCL,Transurban Group,42209099199.00
+13,GMG,Goodman Group,41960279798.00
+14,APT,Afterpay Ltd,36573787278.00
+15,RIO,RIO Tinto Ltd,35276676816.00
+16,ALL,Aristocrat Leisure Ltd,30088200348.00
+17,COL,Coles Group Ltd,23944038043.00
+18,JHX,James Hardie Industries Plc,23373642925.00
+19,WPL,Woodside Petroleum Ltd,22563332591.00
+20,SYD,Sydney Airport,22534147113.00
+21,XRO,Xero Ltd,22241897926.00
+22,REA,REA Group Ltd,21667223588.00
+23,NCM,Newcrest Mining Ltd,20399876785.00
+24,SHL,Sonic Healthcare Ltd,19006328727.00
+25,S32,SOUTH32 Ltd,17726247019.00
+26,WTC,Wisetech Global Ltd,17472566985.00
+27,QBE,QBE Insurance Group Ltd,17467146022.00
+28,FPH,Fisher & Paykel Healthcare Corporation Ltd,17032540663.00
+29,SCG,Scentre Group,16142076634.00
+30,RHC,Ramsay Health Care Ltd,15838613986.00
+31,ASX,ASX Ltd,15793493316.00
+32,SUN,Suncorp Group Ltd,15780490103.00
+33,BXB,Brambles Ltd,14758365883.00
+34,STO,Santos Ltd,14664784929.00
+35,COH,Cochlear Ltd,14651404193.00
+36,RMD,Resmed Inc,14235515224.00
+37,MGOC,Magellan Global Fund (Open Class) (Managed Fund),14197876981.00
+38,AMC,Amcor Plc,13444439005.00
+39,TPG,TPG Telecom Ltd,13015391683.00
+40,IAG,Insurance Australia Group Ltd  ,12596662053.00
+41,SOL,Washington H Soul Pattinson & Company Ltd,12226143197.00
+42,EDV,Endeavour Group Ltd,12053295514.00
+43,DXS,Dexus,11928018578.00
+44,SEK,Seek Ltd,11715648691.00
+45,REH,Reece Ltd,11685853834.00
+46,MGR,Mirvac Group,11630871376.00
+47,DMP,Domino's PIZZA Enterprises Ltd,11503015171.00
+48,SGP,Stockland,11386808828.00
+49,AIA,Auckland International Airport Ltd,11368094778.00
+50,TAH,Tabcorp Holdings Ltd,11217889383.00
+51,NST,Northern Star Resources Ltd,11040514167.00
+52,CPU,Computershare Ltd,10903351808.00
+53,QAN,Qantas Airways Ltd  ,10750454779.00
+54,IEL,Idp Education Ltd,10390290757.00
+55,BSL,Bluescope Steel Ltd,10358656615.00
+56,APA,APA Group,10052695585.00
+57,GPT,GPT Group,10037625733.00
+58,AFI,Australian Foundation Investment Company Ltd,10028936263.00
+59,AST,Ausnet Services Ltd,9613210860.00
+60,MPL,Medibank Private Ltd,9583931275.00
+61,VAS,Vanguard Australian Shares INDEX ETF,9490759347.00
+62,ORG,Origin Energy Ltd,9123073348.00
+63,OSH,Oil Search Ltd,8997093375.00
+64,TWE,Treasury Wine Estates Ltd,8380657323.00
+65,OZL,OZ Minerals Ltd,8324691576.00
+66,CHC,Charter Hall Group,8193019734.00
+67,SPK,Spark New Zealand Ltd,8131992051.00
+68,VCX,Vicinity Centres,8125811514.00
+69,MCY,Mercury NZ Ltd,8023952495.00
+70,PMGOLD,Gold,7690280000.00
+71,SVW,Seven Group Holdings Ltd,7672063619.00
+72,LLC,Lendlease Group,7466669604.00
+73,MIN,Mineral Resources Ltd,7436921309.00
+74,ALD,Ampol Ltd,7418344342.00
+75,IGO,IGO Ltd,7231907614.00
+76,BLD,Boral Ltd,7015642345.00
+77,CAR,Carsales.com Ltd,7013316043.00
+78,EVN,Evolution Mining Ltd,6910180950.00
+79,ARG,Argo Investments Ltd,6870824163.00
+80,AZJ,Aurizon Holdings Ltd  ,6718569534.00
+81,MFG,Magellan Financial Group Ltd,6717115056.00
+82,CIM,Cimic Group Ltd,6671079409.00
+83,ALQ,Als Ltd,6614057293.00
+84,CWN,Crown Resorts Ltd,6521034150.00
+85,PLS,Pilbara Minerals Ltd,6205808125.00
+86,ALX,Atlas Arteria,6204847922.00
+87,LYC,Lynas Rare EARTHS Ltd  ,6172495029.00
+88,HVN,Harvey Norman Holdings Ltd,6167732937.00
+89,ORI,Orica Ltd,6157522926.00
+90,MEZ,Meridian Energy Ltd,6116293552.00
+91,QUB,QUBE Holdings Ltd,6106239787.00
+92,AWC,Alumina Ltd,6035497347.00
+93,WOR,Worley Ltd,5870150780.00
+94,CWY,Cleanaway Waste Management Ltd  ,5855026695.00
+95,ORE,Orocobre Ltd  ,5833359112.00
+96,BOQ,Bank of Queensland Ltd,5832095023.00
+97,IPL,Incitec Pivot Ltd,5826675087.00
+98,IFT,Infratil Ltd,5720732275.00
+99,PME,Pro Medicus Ltd,5693229511.00
+100,FBU,Fletcher Building Ltd,5586940215.00
+101,JBH,JB Hi-Fi Ltd,5494871683.00
+102,EBO,Ebos Group Ltd,5467285708.00
+103,NXT,NEXTDC Ltd,5388522427.00
+104,BEN,Bendigo and Adelaide Bank Ltd,5243526357.00
+105,A2M,The a2 Milk Company Ltd,5123489615.00
+106,SKI,Spark Infrastructure Group,5001619698.00
+107,IVV,Ishares S&P 500 ETF,4980215598.00
+108,ALU,Altium Ltd,4969530922.00
+109,PMV,Premier Investments Ltd,4969264638.00
+110,STW,SPDR S&P/ASX 200 Fund,4782177604.00
+111,NEC,Nine Entertainment Co. Holdings Ltd,4740993243.00
+112,CGF,Challenger Ltd,4726819069.00
+113,SDF,Steadfast Group Ltd  ,4682674997.00
+114,DOW,Downer Edi Ltd,4503796121.00
+115,MLT,Milton Corporation Ltd,4443178099.00
+116,NWL,Netwealth Group Ltd,4269162146.00
+117,IOZ,Ishares Core S&P/ASX 200 ETF,4225684424.00
+118,VGS,Vanguard MSCI INDEX International Shares ETF,4194747117.00
+119,BRG,Breville Group Ltd,4102744975.00
+120,RWC,Reliance Worldwide Corporation Ltd,4100591830.00
+121,MTS,Metcash Ltd,4074585560.00
+122,YAL,Yancoal Australia Ltd,4066953466.00
+123,ANN,Ansell Ltd,4050120186.00
+124,FLT,Flight Centre Travel Group Ltd,4048811978.00
+125,AGL,AGL Energy Ltd,4002945256.00
+126,ARB,ARB Corporation Ltd,3993805446.00
+127,ILU,Iluka Resources Ltd,3990798085.00
+128,TNE,Technology One Ltd,3972795486.00
+129,Z1P,ZIP Co Ltd,3971256685.00
+130,APE,Eagers Automotive Ltd,3846288597.00
+131,AMP,AMP Ltd,3805013319.00
+132,BKW,Brickworks Ltd,3721539257.00
+133,VEA,Viva Energy Group Ltd,3713645275.00
+134,DHG,Domain Holdings Australia Ltd,3412099944.00
+135,CTD,Corporate Travel Management Ltd,3329738158.00
+136,SGR,The Star Entertainment Group Ltd,3322529593.00
+137,GOZ,Growthpoint Properties Australia,3273521621.00
+138,GNE,Genesis Energy Ltd,3255934191.00
+139,VUK,Virgin Money Uk Plc,3249490880.00
+140,PNI,Pinnacle Investment Management Group Ltd,3246856475.00
+141,SNZ,Summerset Group Holdings Ltd,3243734507.00
+142,LTR,Liontown Resources Ltd,3210779682.00
+143,CLW,Charter Hall Long Wale REIT,3164841248.00
+144,NHF,Nib Holdings Ltd,3158776964.00
+145,SCP,Shopping Centres Australasia Property Group,3152948546.00
+146,BPT,Beach Energy Ltd,3148240445.00
+147,HLS,Healius Ltd,3078398356.00
+148,ABP,Abacus Property Group,3061104787.00
+149,WHC,Whitehaven Coal Ltd,2984341830.00
+150,MGF,Magellan Global Fund,2976768716.00
+151,NVX,Novonix Ltd,2962942727.00
+152,IFL,IOOF Holdings Ltd,2960919063.00
+153,VTS,Vanguard US Total Market Shares INDEX ETF,2927030500.00
+154,NSR,National Storage REIT,2923196999.00
+155,SUL,Super Retail Group Ltd,2895095730.00
+156,SGM,Sims Ltd,2876078489.00
+157,CSR,CSR Ltd,2863758378.00
+158,PXA,Pexa Group Ltd,2837212608.00
+159,ORA,Orora Ltd,2829563279.00
+160,PBH,Pointsbet Holdings Ltd,2793889464.00
+161,UWL,Uniti Group Ltd,2786113908.00
+162,CNU,Chorus Ltd,2759367968.00
+163,MP1,Megaport Ltd,2755954580.00
+164,BWP,BWP Trust,2749402677.00
+165,BAP,Bapcor Ltd,2718694125.00
+166,PDL,Pendal Group Ltd,2697879103.00
+167,NIC,Nickel Mines Ltd,2653355649.00
+168,CNI,Centuria Capital Group,2615463067.00
+169,EVT,Event Hospitality and Entertainment Ltd  ,2577516381.00
+170,AAA,Betashares Australian High Interest Cash ETF,2504779839.00
+171,IOO,Ishares Global 100 ETF,2496477125.00
+172,PDN,Paladin Energy Ltd,2477211007.00
+173,ZIM,Zimplats Holdings Ltd,2465978539.00
+174,IMU,Imugene Ltd  ,2445187825.00
+175,LIC,Lifestyle Communities Ltd,2429628844.00
+176,CHN,Chalice Mining Ltd,2424685297.00
+177,CQR,Charter Hall Retail REIT,2406058649.00
+178,WEB,Webjet Ltd,2404822056.00
+179,QUAL,Vaneck MSCI International Quality ETF,2399662214.00
+180,VAP,Vanguard Australian Property Securities INDEX ETF,2388131069.00
+181,BFL,BSP Financial Group Ltd,2373494989.00
+182,CDA,Codan Ltd,2369579549.00
+183,CIP,Centuria Industrial REIT,2367842018.00
+184,CRN,Coronado Global Resources Inc,2355417491.00
+185,CIA,Champion Iron Ltd,2339992467.00
+186,VEU,Vanguard All-World Ex-US Shares INDEX ETF,2334893381.00
+187,NDQ,Betashares Nasdaq 100 ETF,2332288115.00
+188,PPT,Perpetual Ltd,2319221678.00
+189,HMC,Home Consortium,2293104205.00
+190,LNK,Link Administration Holdings Ltd,2290672820.00
+191,IRE,Iress Ltd,2282867464.00
+192,SKC,Skycity Entertainment Group Ltd,2280615627.00
+193,SFR,Sandfire Resources Ltd,2267199868.00
+194,DDR,Dicker Data Ltd,2264118365.00
+195,LOV,Lovisa Holdings Ltd,2245906601.00
+196,HUB,HUB24 Ltd,2236476333.00
+197,CCP,Credit Corp Group Ltd,2225459257.00
+198,LFS,Latitude Group Holdings Ltd,2220000000.00
+199,WPR,Waypoint REIT,2213762257.00
+200,INA,Ingenia Communities Group,2196804606.00
+201,CMW,Cromwell Property Group,2146325953.00
+202,DRR,Deterra Royalties Ltd,2098157418.00
+203,ABC,Adbri Ltd,2062303074.00
+204,WAM,WAM Capital Ltd,2058494045.00
+205,HYGG,Hyperion GBL Growth Companies Fund (Managed Fund),2036281129.00
+206,TYR,Tyro Payments Ltd,2007051002.00
+207,PRU,Perseus Mining Ltd,1999960399.00
+208,AVN,Aventus Group,1986137985.00
+209,PPH,Pushpay Holdings Ltd,1983346016.00
+210,IPH,IPH Ltd,1968607442.00
+211,CEN,Contact Energy Ltd,1957712696.00
+212,NHC,New Hope Corporation Ltd,1956039143.00
+213,BKL,Blackmores Ltd,1952575100.00
+214,OCL,Objective Corporation Ltd,1937449583.00
+215,CUV,Clinuvel Pharmaceuticals Ltd,1936391146.00
+216,VHY,Vanguard Australian Shares High Yield ETF,1876695340.00
+217,LFG,Liberty Financial Group,1873212000.00
+218,ETHI,Betashares Global Sustainability Leaders ETF,1837709287.00
+219,ZEL,Z Energy Ltd,1811259448.00
+220,PTM,Platinum Asset Management Ltd,1806971012.00
+221,VGAD,Vanguard MSCI INDEX International Shares (Hedged) ETF,1805378598.00
+222,AIZ,Air New Zealand Ltd,1796550763.00
+223,ELD,Elders Ltd,1793221538.00
+224,LSF,L1 Long Short Fund Ltd,1780685946.00
+225,JHG,Janus Henderson Group Plc,1776396817.00
+226,IAF,Ishares Core Composite Bond ETF,1767552105.00
+227,NAN,Nanosonics Ltd,1749403412.00
+228,A200,Betashares Australia 200 ETF,1738672949.00
+229,NUF,Nufarm Ltd,1724778307.00
+230,MVW,Vaneck Australian EQUAL Weight ETF,1710354925.00
+231,AUB,AUB Group Ltd,1704584345.00
+232,MFF,MFF Capital Investments Ltd,1692681009.00
+233,IVC,Invocare Ltd,1679748147.00
+234,RRL,Regis Resources Ltd,1675604292.00
+235,VUL,Vulcan Energy Resources Ltd,1658145468.00
+236,TLX,TELIX Pharmaceuticals Ltd,1647721408.00
+237,BGA,Bega Cheese Ltd,1633089522.00
+238,MAQ,Macquarie Telecom Group Ltd,1612295775.00
+239,SLK,Sealink Travel Group Ltd,1611784974.00
+240,ERA,Energy Resources of Australia Ltd,1568837859.00
+241,TPW,Temple & Webster Group Ltd,1557456359.00
+242,RBD,Restaurant Brands New Zealand Ltd,1549500856.00
+243,ARF,Arena REIT,1525021683.00
+244,WLE,Wam Leaders Ltd,1524476750.00
+245,MXT,Metrics Master Income Trust,1515997454.00
+246,CKF,Collins Foods Ltd,1513548547.00
+247,HTA,Hutchison Telecommunications (Australia) Ltd,1492975943.00
+248,360,LIFE360 Inc,1477661829.00
+249,COF,Centuria Office REIT,1451606901.00
+250,MGH,Maas Group Holdings Ltd,1444302208.00
+251,SLR,Silver Lake Resources Ltd,1443080580.00
+252,CCX,City Chic Collective Ltd,1435585332.00
+253,DEG,De Grey Mining Ltd  ,1428297763.00
+254,JLG,Johns LYNG Group Ltd,1427188846.00
+255,ASM,Australian Strategic Materials Ltd,1422961261.00
+256,CGC,Costa Group Holdings Ltd,1420998580.00
+257,ING,Inghams Group Ltd,1419816076.00
+258,GNC,Graincorp Ltd,1416616337.00
+259,HBRD,Betashares Active Australian Hybrids Fund (Managed Fund),1415280008.00
+260,VAF,Vanguard Australian Fixed Interest INDEX ETF,1403475320.00
+261,VDHG,Vanguard Diversified High Growth INDEX ETF,1400218404.00
+262,CQE,Charter Hall Social Infrastructure REIT,1378468904.00
+263,AEF,Australian Ethical Investment Ltd,1376742441.00
+264,AX1,Accent Group Ltd,1360085455.00
+265,APX,Appen Ltd,1342747334.00
+266,HGH,Heartland Group Holdings Ltd,1338924272.00
+267,PSI,PSC Insurance Group Ltd,1329918387.00
+268,INR,Ioneer Ltd,1313895862.00
+269,MAF,Ma Financial Group Ltd,1313353501.00
+270,HSN,Hansen Technologies Ltd,1305377434.00
+271,CTT,Cettire Ltd,1300022330.00
+272,RMS,Ramelius Resources Ltd,1259298512.00
+273,GOLD,ETFs Metal Securities Australia Ltd,1256947986.00
+274,AUI,Australian United Investment Company Ltd,1248687670.00
+275,SIQ,Smartgroup Corporation Ltd,1247282084.00
+276,FCL,Fineos Corporation Holdings Plc  ,1243837772.00
+277,29M,29METALS Ltd,1239573900.00
+278,FAIR,Betashares Australian Sustainability Leaders ETF,1222319290.00
+279,PNV,Polynovo Ltd,1220260941.00
+280,NWS,News Corporation,1212187370.00
+281,BKI,BKI Investment Company Ltd,1200024705.00
+282,UMG,United Malt Group Ltd,1193724749.00
+283,HDN,Homeco Daily Needs REIT,1189948980.00
+284,EML,EML Payments Ltd,1183562612.00
+285,NCK,Nick Scali Ltd,1183410000.00
+286,ISX,Isignthis Ltd,1177847566.00
+287,SZL,Sezzle Inc,1174814751.00
+288,RBL,Redbubble Ltd,1172660948.00
+289,GOR,Gold Road Resources Ltd,1163323575.00
+290,PPK,PPK Group Ltd,1149153201.00
+291,PEB,Pacific Edge Ltd,1124137431.00
+292,LEP,Ale Property Group,1122558164.00
+293,DBI,Dalrymple Bay Infrastructure Ltd,1115558892.00
+294,DUI,Diversified United Investment Ltd,1113637546.00
+295,KMD,Kathmandu Holdings Ltd,1102497152.00
+296,ABB,Aussie Broadband Ltd  ,1101253199.00
+297,OML,Ooh!Media Ltd,1089535489.00
+298,MMS,Mcmillan Shakespeare Ltd,1084109309.00
+299,PPM,Pepper Money Ltd,1067999356.00
+300,PGH,Pact Group Holdings Ltd,1056970463.00
