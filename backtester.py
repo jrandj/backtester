@@ -162,12 +162,11 @@ class Backtester:
         index = 0
         ignore = 0
         minimum_size_vectorised_false = 1
-        minimum_size_vectorised_true = 200
 
         for i, ticker in enumerate(tickers):
             ticker_data = self.data.loc[self.data['ticker'] == ticker]
             if self.config['global_options']['vectorised'] == 'True':
-                if ticker_data['date'].size > minimum_size_vectorised_true:
+                if ticker_data['date'].size > int(self.config['crossover_strategy_options']['sma2']):
                     print(f"Adding {ticker} to strategy with {ticker_data['date'].size} rows")
                     self.cerebro.adddata(TickerData(dataname=ticker_data), name=ticker)
                     # self.cerebro.datas[index].plotinfo.plot = False
