@@ -14,7 +14,7 @@ from CustomSizer import CustomSizer
 from TickerData import TickerData
 from CrossoverStrategy import CrossoverStrategy
 from PumpStrategy import PumpStrategy
-from PairStrategy import PairStrategy
+# from PairStrategy import PairStrategy
 from Benchmark import Benchmark
 from CustomCommissionScheme import CustomCommissionScheme
 
