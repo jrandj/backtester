@@ -1,3 +1,5 @@
+import configparser
+
 import backtrader as bt
 
 
@@ -15,9 +17,12 @@ class CustomSizer(bt.Sizer):
     _getsizing()
         Returns the number of shares to purchase.
     """
+    config = configparser.RawConfigParser()
+    config.read('config.properties')
+
     params = (
-        ('percents', 2),
-        ('starting_cash', 1000000),
+        ('percents', float(config['global_options']['position_size'])),
+        ('starting_cash', float(config['broker']['cash'])),
         ('retint', False)
     )
 

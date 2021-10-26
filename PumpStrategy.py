@@ -1,3 +1,5 @@
+import configparser
+
 from pathlib import Path
 import backtrader as bt
 import csv
@@ -52,16 +54,19 @@ class PumpStrategy(bt.Strategy):
     notify_trade()
         Handle trades and provide a notification from the broker based on the trade.
     """
+    config = configparser.RawConfigParser()
+    config.read('config.properties')
+
     # parameters for the strategy
     params = (
         ('verbose', True),
-        ('volume_average_period', 20),
-        ('price_average_period', 45),
-        ('sell_timeout', 30),
-        ('buy_timeout', 30),
-        ('volume_factor', 8),
-        ('position_limit', 50),
-        ('profit_factor', 1.5),
+        ('volume_average_period', int(config['pump_strategy_options']['volume_average_period'])),
+        ('price_average_period', int(config['pump_strategy_options']['price_average_period'])),
+        ('sell_timeout', int(config['pump_strategy_options']['sell_timeout'])),
+        ('buy_timeout', int(config['pump_strategy_options']['buy_timeout'])),
+        ('volume_factor', int(config['pump_strategy_options']['volume_factor'])),
+        ('position_limit', int(config['global_options']['position_limit'])),
+        ('profit_factor', float(config['pump_strategy_options']['profit_factor'])),
         ('log_file', 'PumpStrategy.csv')
     )
 

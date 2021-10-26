@@ -166,7 +166,7 @@ class Backtester:
 
         for i, ticker in enumerate(tickers):
             ticker_data = self.data.loc[self.data['ticker'] == ticker]
-            if self.config['options']['vectorised'] == 'True':
+            if self.config['global_options']['vectorised'] == 'True':
                 if ticker_data['date'].size > minimum_size_vectorised_true:
                     print(f"Adding {ticker} to strategy with {ticker_data['date'].size} rows")
                     self.cerebro.adddata(TickerData(dataname=ticker_data), name=ticker)
@@ -238,7 +238,7 @@ class Backtester:
         # self.cerebro_benchmark.addsizer(bt.sizers.AllInSizer)
         print(f"Running benchmark...")
         results = self.cerebro_benchmark.run()  # runonce=False
-        if self.config['options']['plot_benchmark'] == 'True':
+        if self.config['global_options']['plot_benchmark'] == 'True':
             self.cerebro_benchmark.plot(volume=False)
         return results
 
@@ -260,20 +260,20 @@ class Backtester:
         self.cerebro.addobserver(bt.observers.Broker)
         self.cerebro.addobserver(bt.observers.Trades)
         self.cerebro.addanalyzer(bt.analyzers.PyFolio, _name='pyfolio')
-        if self.config['options']['strategy'] == 'Pump':
+        if self.config['global_options']['strategy'] == 'Pump':
             self.cerebro.addstrategy(PumpStrategy, verbose=True, log_file='strategy_log.csv')
-        elif self.config['options']['strategy'] == 'Crossover':
+        elif self.config['global_options']['strategy'] == 'Crossover':
             self.cerebro.addstrategy(CrossoverStrategy, verbose=True, log_file='strategy_log.csv')
         else:
-            raise ValueError(f"Strategy {self.config['options']['strategy']} must be Pump or Crossover.")
-        self.cerebro.addsizer(CustomSizer, percents=float(self.config['options']['position_size']))
-        print(f"Running {self.config['options']['strategy']} strategy...")
-        if self.config['options']['vectorised'] == 'True':
+            raise ValueError(f"Strategy {self.config['global_options']['strategy']} must be Pump or Crossover.")
+        self.cerebro.addsizer(CustomSizer, percents=float(self.config['global_options']['position_size']))
+        print(f"Running {self.config['global_options']['strategy']} strategy...")
+        if self.config['global_options']['vectorised'] == 'True':
             results = self.cerebro.run(runonce=True)
         else:
             results = self.cerebro.run(runonce=False)
-        if self.config['options']['plot_enabled'] == 'True':
-            if self.config['options']['plot_volume'] == 'True':
+        if self.config['global_options']['plot_enabled'] == 'True':
+            if self.config['global_options']['plot_volume'] == 'True':
                 self.cerebro.plot()
             else:
                 self.cerebro.plot(volume=False)
@@ -397,9 +397,9 @@ class Backtester:
         self.global_settings()
         self.cash = float(self.config['broker']['cash'])
         self.bulk = self.config['data']['bulk']
-        self.small_cap_only = self.config['options']['small_cap_only']
-        self.cheat_on_close = self.config['options']['cheat_on_close']
-        self.reports = self.config['options']['reports']
+        self.small_cap_only = self.config['global_options']['small_cap_only']
+        self.cheat_on_close = self.config['global_options']['cheat_on_close']
+        self.reports = self.config['global_options']['reports']
         self.start_date = self.config['data']['start_date']
         self.end_date = self.config['data']['end_date']
         self.comminfo = CustomCommissionScheme()

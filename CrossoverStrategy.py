@@ -1,3 +1,5 @@
+import configparser
+
 from pathlib import Path
 import backtrader as bt
 import csv
@@ -49,12 +51,15 @@ class CrossoverStrategy(bt.Strategy):
     notify_trade()
         Handle trades and provide a notification from the broker based on the trade.
     """
+    config = configparser.RawConfigParser()
+    config.read('config.properties')
+
     # parameters for the strategy
     params = (
         ('verbose', True),
-        ('sma1', 50),
-        ('sma2', 200),
-        ('position_limit', 50),
+        ('sma1', int(config['crossover_strategy_options']['sma1'])),
+        ('sma2', int(config['crossover_strategy_options']['sma2'])),
+        ('position_limit', int(config['global_options']['position_limit'])),
         ('log_file', 'CrossoverStrategy.csv')
     )
 
