@@ -338,7 +338,7 @@ class Backtester:
         # read asx300 constituents data
         if os.path.isfile(
                 os.path.join(os.path.dirname(__file__), "data", "asx300_constituents_221021" + os.extsep + "csv")):
-            print(f"Reading asx300 as at 22/10/21 constituents from .csv")
+            print(f"Reading asx300 constituents (as at 22/10/21) from .csv")
             asx300_constituents = pd.read_csv(
                 os.path.join(os.path.dirname(__file__), "data", "asx300_constituents_221021" + os.extsep + "csv"),
                 index_col=False)
