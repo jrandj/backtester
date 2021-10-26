@@ -8,7 +8,7 @@ import backtrader as bt
 import configparser
 import quantstats as qs
 import glob
-from yahooquery import Ticker
+# from yahooquery import Ticker
 
 from CustomSizer import CustomSizer
 from TickerData import TickerData
