@@ -14,7 +14,7 @@ The data is OHLCV with the an example shown below:
 
 Data was obtained from [Premium Data](https://www.premiumdata.net/products/premiumdata/asxhistorical.php) at a point in time. The data covers 2,628 stocks listed on the ASX between 1992-05-29 and 2018-05-04.
 
-By default the sample .csv files in the `data` subdirectory will be used when the application is run. To use a wider set of data update the path variable in config.properties to point to a folder with additional data.
+By default the sample .csv files in the `data` subdirectory will be used when the application is run. To use a wider set of data update the path variable in `config.properties` to point to a folder with additional data.
 
 ## Results
 
@@ -85,7 +85,7 @@ Once these are installed:
 
 ### Installation
 
-To install Backtester:
+To install backtester:
 
 1. Create the virtual environment:
     ```bash
@@ -99,14 +99,14 @@ To install Backtester:
 
 1. Configure your IDE to use the new environment.
 
-To uninstall Backtester:
+To uninstall backtester:
 
 1. Remove the virtual environment:
     ```bash
     conda env remove -n backtester
     ```
 
-To update the Backtester dependencies (FYI only):
+To update the backtester dependencies (FYI only):
 
 1. Update the conda packages to the latest compatible versions:
     ```bash
@@ -117,3 +117,59 @@ To update the Backtester dependencies (FYI only):
     ```bash
     conda env export > environment.yml
     ```
+
+### Configuration
+
+The `config.properties` file contains configuration for the backtester application. A description of each property is shown below.
+
+```markdown
+[data]
+path: The folder directory containing OLHCV data.
+	Allowed Values: A valid directory.
+benchmark: The benchmarking ticker.
+	Allowed Values: A ticker from the OHLCV dataframe.
+bulk: A flag used to decide whether to look at all data from path or use the tickers field.
+	Allowed Values: True or False
+tickers: A list of comma separated codes from the consolidated OHLCV data read from path. Only used when bulk is set to False.
+	Allowed Values: Comma separated list
+start_date: The strategy start date. Cannot be earlier than the earliest date in the OHLCV dataframe.
+	Allowed Values: Date (DD/MM/YYYY).
+end_date: The strategy end date. Cannot be after the latest date in the OHLCV dataframe.
+	Allowed Values: Date (DD/MM/YYYY).
+
+[global_options]
+strategy: The strategy to be backtested.
+	Allowed Values: Pump or Crossover.
+position_limit: The number of positions that can be held.
+	Allowed Values: An int.
+position_size: The relative size of each position as a percent out of 100. Must equal 100 when multiplied with the position_limit. For example, a position_limit of 50 and a position_size of 2.
+	Allowed Values: An int.
+plot_enabled: A flag used to decide whether to plot the strategy performance. Not recommended when bulk is set to True.
+	Allowed Values: True or False.
+plot_volume: A flag used to decide whether to show the volume when plotting the strategy performance. Only relevant if plot_enabled is set to True.
+	Allowed Values: True or False.
+plot_benchmark: A flag used to decide whether to plot the benchmark performance.
+	Allowed Values: True or False.
+
+[crossover_strategy_options]
+sma1: The slow moving average used to calculate a crossover.
+	Allowed Values: An int.
+sma1: The fast moving average used to calculate a crossover.
+	Allowed Values: An int.
+
+[pump_strategy_options]
+volume_factor: The multiple used when comparing today's volume against the average volume.
+	Allowed Values: An int.
+buy_timeout: The time in days required after selling a position in a ticker, before buying back into the same ticker is possible.
+	Allowed Values: An int.
+sell_timeout: The time in days before we abandon a position.
+	Allowed Values: An int.
+price_average_period: The averaging period used when calculating the price average.
+	Allowed Values: An int.
+volume_average_period: The averaging period used when calculating the volume average.
+	Allowed Values: An int.
+
+[broker]
+cash: The amount of cash in the portfolio.
+	Allowed Values: A float.
+```
