@@ -217,14 +217,14 @@ class CrossoverStrategy(bt.Strategy):
                         if position_count < self.params.position_limit:
                             # self.log(f"Buying {dn} with close: {d.close[0]} or open {d.open[0]}", dt)
                             # self.o[d] = [self.buy(data=d), d.close.get(size=1, ago=-1)[0]]
-                            self.o[d] = self.buy(data=d)
+                            self.o[d] = self.buy(data=d, exectype=bt.Order.Market)
                         else:
                             self.log(f"Cannot buy {dn} as I have {position_count} positions already", dt)
                     else:
                         self.log(f"Cannot buy {dn} as I already long", dt)
                 elif self.inds[d]['cross'] == -1:
                     if self.getposition(d).size:
-                        self.o[d] = self.close(data=d)
+                        self.o[d] = self.close(data=d, exectype=bt.Order.Market)
                     else:
                         self.log(f"Cannot sell {dn} as I am not long", dt)
 

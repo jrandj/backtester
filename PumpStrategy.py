@@ -239,7 +239,7 @@ class PumpStrategy(bt.Strategy):
                                     days_elapsed = (dt - self.position_dt[d]['end']).days
                                     # enforce a timeout period to avoid buying back soon after closing
                                     if days_elapsed > self.params.buy_timeout:
-                                        self.o[d] = self.buy(data=d)
+                                        self.o[d] = self.buy(data=d, exectype=bt.Order.Market)
                                         self.position_dt[d]['start'] = dt
                                         self.log(f"Buy {dn} after {days_elapsed} days since"
                                                  f" close of last position", dt)
@@ -262,14 +262,14 @@ class PumpStrategy(bt.Strategy):
 
                     # take profit based on profit threshold
                     if d.close[0] >= self.params.profit_factor * self.getposition(data=d).price:
-                        self.o[d] = self.close(data=d)
+                        self.o[d] = self.close(data=d, exectype=bt.Order.Market)
                         self.position_dt[d]['end'] = dt
                         self.log(f"Close {dn} position as {self.params.profit_factor} profit reached", dt)
 
                     # enforce a timeout to abandon a trade
                     days_elapsed = (dt - self.position_dt[d]['start']).days
                     if days_elapsed > self.params.sell_timeout:
-                        self.o[d] = self.close(data=d)
+                        self.o[d] = self.close(data=d, exectype=bt.Order.Market)
                         self.position_dt[d]['end'] = dt
                         self.log(f"Abandon {dn} position after {days_elapsed} days since start of position", dt)
 
@@ -310,6 +310,7 @@ class PumpStrategy(bt.Strategy):
         """
         dt = self.datetime.date()
         if trade.isclosed:
-            self.log(f"Position in {trade.data._name} opened on {trade.open_datetime().date()} and closed "
-                     f"on {trade.close_datetime().date()} with PnL Gross {trade.pnl:.2f} and PnL Net "
+            days_held = (trade.close_datetime().date() - trade.open_datetime().date()).days
+            self.log(f"Today is {dt} and position in {trade.data._name} which opened on {trade.open_datetime().date()} "
+                     f"is now closed after {days_held} days with PnL Gross {trade.pnl:.2f} and PnL Net "
                      f"{trade.pnlcomm:.2f}", dt)
