@@ -66,7 +66,9 @@ class PumpStrategy(bt.Strategy):
         ('price_average_period', int(config['pump_strategy_options']['price_average_period'])),
         ('sell_timeout', int(config['pump_strategy_options']['sell_timeout'])),
         ('buy_timeout', int(config['pump_strategy_options']['buy_timeout'])),
-        ('volume_factor', int(config['pump_strategy_options']['volume_factor'])),
+        ('volume_factor', float(config['pump_strategy_options']['volume_factor'])),
+        ('price_comparison_lower_bound', float(config['pump_strategy_options']['price_comparison_lower_bound'])),
+        ('price_comparison_upper_bound', float(config['pump_strategy_options']['price_comparison_upper_bound'])),
         ('position_limit', int(config['global_options']['position_limit'])),
         ('profit_factor', float(config['pump_strategy_options']['profit_factor'])),
         ('log_file', 'PumpStrategy.csv')
