@@ -223,8 +223,9 @@ class PumpStrategy(bt.Strategy):
             if not self.o.get(d, None):
                 # need data from yesterday
                 if len(d.close.get(size=1, ago=-1)) > 0:
-                    condition_a = self.params.volume_factor * d.volume[0] > self.inds[d]['volume_average'][0]
-                    condition_b = 0.95 < (d.high[0] / d.close.get(size=1, ago=-1)[0]) < 1.10
+                    condition_a = d.volume[0] > (self.params.volume_factor * self.inds[d]['volume_average'][0])
+                    condition_b = self.params.price_comparison_lower_bound < (
+                                d.high[0] / d.close.get(size=1, ago=-1)[0]) < self.params.price_comparison_upper_bound
                     condition_c = d.close[0] >= self.inds[d]['price_max'][0]
 
                     # self.log(f"{dn}: {condition_a} {condition_b} {condition_c}", dt)
