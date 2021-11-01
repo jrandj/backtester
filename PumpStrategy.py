@@ -34,6 +34,8 @@ class PumpStrategy(bt.Strategy):
         The Compound Annual Growth Rate (CAGR) for the strategy.
     d_with_len : list
         The subset of data that is guaranteed to be available.
+    trade_count : int
+        The total number of trades executed by the strategy.
 
     Methods
     -------
@@ -80,6 +82,7 @@ class PumpStrategy(bt.Strategy):
         ------
 
         """
+        self.trade_count = 0
         self.position_dt = defaultdict(dict)
         self.o = defaultdict(dict)
         self.inds = dict()
@@ -240,6 +243,7 @@ class PumpStrategy(bt.Strategy):
                                     # enforce a timeout period to avoid buying back soon after closing
                                     if days_elapsed > self.params.buy_timeout:
                                         self.o[d] = self.buy(data=d, exectype=bt.Order.Market)
+                                        self.trade_count = self.trade_count + 1
                                         self.position_dt[d]['start'] = dt
                                         self.log(f"Buy {dn} after {days_elapsed} days since"
                                                  f" close of last position", dt)
@@ -248,6 +252,7 @@ class PumpStrategy(bt.Strategy):
                                 # we did not have a position before
                                 else:
                                     self.o[d] = self.buy(data=d)
+                                    self.trade_count = self.trade_count + 1
                                     self.position_dt[d]['start'] = dt
                                     self.log(f"Buy {dn} for the first time", dt)
                             else:
@@ -263,6 +268,7 @@ class PumpStrategy(bt.Strategy):
                     # take profit based on profit threshold
                     if d.close[0] >= self.params.profit_factor * self.getposition(data=d).price:
                         self.o[d] = self.close(data=d, exectype=bt.Order.Market)
+                        self.trade_count = self.trade_count + 1
                         self.position_dt[d]['end'] = dt
                         self.log(f"Close {dn} position as {self.params.profit_factor} profit reached", dt)
 
@@ -270,6 +276,7 @@ class PumpStrategy(bt.Strategy):
                     days_elapsed = (dt - self.position_dt[d]['start']).days
                     if days_elapsed > self.params.sell_timeout:
                         self.o[d] = self.close(data=d, exectype=bt.Order.Market)
+                        self.trade_count = self.trade_count + 1
                         self.position_dt[d]['end'] = dt
                         self.log(f"Abandon {dn} position after {days_elapsed} days since start of position", dt)
 
@@ -293,7 +300,8 @@ class PumpStrategy(bt.Strategy):
         self.end_val = self.broker.get_value()
         self.cagr = 100 * ((self.end_val / self.start_val) ** (
                 1 / (self.elapsed_days / 365.25)) - 1)
-        print(f"Pump strategy CAGR: {self.cagr:.4f}% (over {(self.elapsed_days / 365.25):.2f} years)")
+        print(f"Pump strategy CAGR: {self.cagr:.4f}% (over {(self.elapsed_days / 365.25):.2f} years "
+              f"with {self.trade_count} trades)")
         print(f"Pump strategy Portfolio Value: {self.end_val}")
 
     def notify_trade(self, trade):

@@ -31,6 +31,8 @@ class CrossoverStrategy(bt.Strategy):
         The Compound Annual Growth Rate (CAGR) for the strategy.
     d_with_len : list
         The subset of data that is guaranteed to be available.
+    trade_count : int
+        The total number of trades executed by the strategy.
 
     Methods
     -------
@@ -73,6 +75,7 @@ class CrossoverStrategy(bt.Strategy):
         ------
 
         """
+        self.trade_count = 0
         self.o = dict()
         self.inds = dict()
         # add the indicators for each data feed
@@ -218,6 +221,7 @@ class CrossoverStrategy(bt.Strategy):
                             # self.log(f"Buying {dn} with close: {d.close[0]} or open {d.open[0]}", dt)
                             # self.o[d] = [self.buy(data=d), d.close.get(size=1, ago=-1)[0]]
                             self.o[d] = self.buy(data=d, exectype=bt.Order.Market)
+                            self.trade_count = self.trade_count + 1
                         else:
                             self.log(f"Cannot buy {dn} as I have {position_count} positions already", dt)
                     else:
@@ -225,6 +229,7 @@ class CrossoverStrategy(bt.Strategy):
                 elif self.inds[d]['cross'] == -1:
                     if self.getposition(d).size:
                         self.o[d] = self.close(data=d, exectype=bt.Order.Market)
+                        self.trade_count = self.trade_count + 1
                     else:
                         self.log(f"Cannot sell {dn} as I am not long", dt)
 
@@ -248,8 +253,9 @@ class CrossoverStrategy(bt.Strategy):
         self.end_val = self.broker.get_value()
         self.cagr = 100 * ((self.end_val / self.start_val) ** (
                 1 / (self.elapsed_days / 365.25)) - 1)
-        print(f"Strategy CAGR: {self.cagr:.4f}% (over {(self.elapsed_days / 365.25):.2f} years)")
-        print(f"Strategy Portfolio Value: {self.end_val}")
+        print(f"Crossover strategy CAGR: {self.cagr:.4f}% (over {(self.elapsed_days / 365.25):.2f} years "
+              f"with {self.trade_count} trades)")
+        print(f"Crossover strategy portfolio value: {self.end_val}")
 
     def notify_trade(self, trade):
         """Handle trades and provide a notification from the broker based on the trade.
