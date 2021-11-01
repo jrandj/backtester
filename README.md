@@ -166,8 +166,14 @@ sell_timeout: The time in days before we abandon a position.
 	Allowed Values: An int.
 price_average_period: The averaging period used when calculating the price average.
 	Allowed Values: An int.
+price_comparison_lower_bound: The lower bound for the ratio of prices.
+	Allowed Values: A float.
+price_comparison_upper_bound: The upper bound for the ratio of prices.
+	Allowed Values: A float.
 volume_average_period: The averaging period used when calculating the volume average.
 	Allowed Values: An int.
+profit_factor: The required profit before closing a position.
+	Allowed Values: A float.
 
 [broker]
 cash: The amount of cash in the portfolio.
