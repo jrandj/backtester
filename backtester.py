@@ -32,20 +32,6 @@ class Backtester:
         The cash available for the strategies.
     bulk : str
         True if all tickers are to be used, False if the tickers are being provided.
-    small_cap_only : str
-        True if all tickers are to be used, False if only tickers outside of the ASX300 are to be used.
-    reports : str
-        True if quantstats reports are to be generated, False otherwise.
-    start_date : str
-        The override start date from configuration used to trim the data range.
-    end_date : str
-        The override end date from configuration used to trim the data range.
-    cheat_on_close : str
-        True if cheat on close functionality is to be used, False otherwise. If cheat on close functionality is enabled,
-        the close price from the day of the signal is used in the order. If cheat on close functionality is not
-        enabled, the open price of the next day is used in the order. It is more realistic not to use this
-        functionality but it means the order sizing is more complex as you don't know the price of execution when
-        sizing the order.
     data : pandas.core.frame.DataFrame
         The dataframe containing all OHCLV ticker data.
     asx300_constituents : pandas.core.frame.DataFrame
@@ -144,9 +130,11 @@ class Backtester:
         ------
 
         """
-        print(f"Adding ticker to benchmark: XJO")
+        print(f"Adding ticker to benchmark: {self.config['data']['benchmark']}")
         self.cerebro_benchmark.adddata(
-            TickerData(dataname=self.benchmark_data.loc[self.benchmark_data['ticker'] == 'XJO']), name='XJO')
+            TickerData(
+                dataname=self.benchmark_data.loc[self.benchmark_data['ticker'] == self.config['data']['benchmark']]),
+            name=self.config['data']['benchmark'])
 
     def add_strategy_data(self):
         """Add the ticker data to the strategy.
@@ -226,7 +214,7 @@ class Backtester:
 
         """
         self.cerebro_benchmark.broker.addcommissioninfo(self.comminfo)
-        self.cerebro_benchmark.broker.setcash(self.cash)
+        self.cerebro_benchmark.broker.setcash(float(self.config['broker']['cash']))
         self.add_benchmark_data()
         self.cerebro_benchmark.addobservermulti(bt.observers.BuySell, barplot=True, bardist=0.0025)
         self.cerebro_benchmark.addobserver(bt.observers.Broker)
@@ -253,7 +241,7 @@ class Backtester:
             If the Strategy from config is not implemented.
         """
         self.cerebro.broker.addcommissioninfo(self.comminfo)
-        self.cerebro.broker.setcash(self.cash)
+        self.cerebro.broker.setcash(float(self.config['broker']['cash']))
         self.add_strategy_data()
         self.cerebro.addobservermulti(bt.observers.BuySell, barplot=True, bardist=0.0025)
         self.cerebro.addobserver(bt.observers.Broker)
@@ -379,10 +367,12 @@ class Backtester:
         comparison_start = max(data['date'].min(), benchmark_data['date'].min())
         comparison_end = min(data['date'].max(), benchmark_data['date'].max())
         # allow override from config
-        if len(self.start_date) > 0 and pd.to_datetime(self.start_date, format='%d/%m/%Y') < comparison_end:
-            comparison_start = pd.to_datetime(self.start_date)
-        if len(self.end_date) > 0 and pd.to_datetime(self.end_date, format='%d/%m/%Y') > comparison_start:
-            comparison_end = pd.to_datetime(self.end_date)
+        if len(self.config['data']['start_date']) > 0 and pd.to_datetime(self.config['data']['start_date'],
+                                                                         format='%d/%m/%Y') < comparison_end:
+            comparison_start = pd.to_datetime(self.config['data']['start_date'])
+        if len(self.config['data']['end_date']) > 0 and pd.to_datetime(self.config['data']['end_date'],
+                                                                       format='%d/%m/%Y') > comparison_start:
+            comparison_end = pd.to_datetime(self.config['data']['end_date'])
         data = data[(data['date'] > comparison_start) & (data['date'] < comparison_end)]
         benchmark_data = benchmark_data[
             (benchmark_data['date'] > comparison_start) & (benchmark_data['date'] < comparison_end)]
@@ -394,21 +384,14 @@ class Backtester:
         self.config = configparser.RawConfigParser()
         self.config.read('config.properties')
         self.global_settings()
-        self.cash = float(self.config['broker']['cash'])
-        self.bulk = self.config['data']['bulk']
-        self.small_cap_only = self.config['global_options']['small_cap_only']
-        self.cheat_on_close = self.config['global_options']['cheat_on_close']
-        self.reports = self.config['global_options']['reports']
-        self.start_date = self.config['data']['start_date']
-        self.end_date = self.config['data']['end_date']
         self.comminfo = CustomCommissionScheme()
         self.clean_logs()
 
         # import data
         self.data, self.benchmark_data, self.asx300_constituents = self.import_data()
-        if self.bulk == 'True' and self.small_cap_only == 'True':
+        if self.config['data']['bulk'] == 'True' and self.config['global_options']['small_cap_only'] == 'True':
             self.tickers = set(self.data['ticker'].unique()) - set(self.asx300_constituents['Ticker'])
-        elif self.bulk == 'True' and self.small_cap_only == 'False':
+        elif self.config['data']['bulk'] == 'True' and self.config['global_options']['small_cap_only'] == 'False':
             self.tickers = self.data['ticker'].unique()
         else:
             self.tickers = self.config['data']['tickers'].split(',')
@@ -417,12 +400,12 @@ class Backtester:
 
         # run the strategy
         self.cerebro = bt.Cerebro(stdstats=False)
-        if self.cheat_on_close == 'True':
+        if self.config['global_options']['cheat_on_close'] == 'True':
             self.cerebro.broker.set_coc(True)
         self.strategy_results = self.run_strategy()
         self.portfolio_stats = self.strategy_results[0].analyzers.getbyname('pyfolio')
         self.returns, self.positions, self.transactions, self.gross_lev = self.portfolio_stats.get_pf_items()
-        if self.reports == 'True':
+        if self.config['global_options']['reports'] == 'True':
             self.run_strategy_reports()
         self.end_value = self.cerebro.broker.getvalue()
 
@@ -431,7 +414,7 @@ class Backtester:
         self.benchmark_results = self.run_benchmark()
         self.benchmark_stats = self.benchmark_results[0].analyzers.getbyname('pyfolio')
         self.benchmark_returns, self.benchmark_positions, self.benchmark_transactions, self.benchmark_gross_lev = self.benchmark_stats.get_pf_items()
-        if self.reports == 'True':
+        if self.config['global_options']['reports'] == 'True':
             self.run_benchmark_reports()
         self.benchmark_end_value = self.cerebro_benchmark.broker.getvalue()
 

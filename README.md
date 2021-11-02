@@ -150,6 +150,18 @@ plot_volume: A flag used to decide whether to show the volume when plotting the 
 	Allowed Values: True or False.
 plot_benchmark: A flag used to decide whether to plot the benchmark performance.
 	Allowed Values: True or False.
+reports: True if quantstats reports are to be generated, and False if not.
+	Allowed Values: A Boolean.
+vectorised: True if the backtrader batch mode is to be used, and False if not. True gives a ~30% performance increase.
+	Allowed Values: A Boolean.
+cheat_on_close: True if cheat on close functionality is to be used, and False if not. If cheat on close functionality is enabled,
+the close price from the day of the signal is used in the order. If cheat on close functionality is not
+enabled, the open price of the next day is used in the order. It is more realistic not to use this
+functionality but it means the order sizing is more complex as you don't know the price of execution when
+sizing the order.
+	Allowed Values: A Boolean.
+small_cap_only: True if all tickers are to be used, False if only tickers outside of the ASX300 are to be used.
+	Allowed Values: A Boolean.
 
 [crossover_strategy_options]
 sma1: The slow moving average used to calculate a crossover.
