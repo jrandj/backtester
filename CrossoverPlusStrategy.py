@@ -5,7 +5,7 @@ import backtrader as bt
 import csv
 
 
-class CrossoverStrategy(bt.Strategy):
+class CrossoverPlusStrategy(bt.Strategy):
     """
     A class that contains the trading strategy.
 
@@ -59,10 +59,13 @@ class CrossoverStrategy(bt.Strategy):
     # parameters for the strategy
     params = (
         ('verbose', True),
-        ('sma1', int(config['crossover_strategy_options']['crossover_sma1'])),
-        ('sma2', int(config['crossover_strategy_options']['crossover_sma2'])),
+        ('sma1', int(config['crossover_plus_strategy_options']['crossover_plus_sma1'])),
+        ('sma2', int(config['crossover_plus_strategy_options']['crossover_plus_sma2'])),
+        ('RSI_period', int(config['crossover_plus_strategy_options']['RSI_period'])),
+        ('RSI_crossover_low', int(config['crossover_plus_strategy_options']['RSI_crossover_low'])),
+        ('RSI_crossover_high', int(config['crossover_plus_strategy_options']['RSI_crossover_high'])),
         ('position_limit', int(config['global_options']['position_limit'])),
-        ('log_file', 'CrossoverStrategy.csv')
+        ('log_file', 'CrossoverPlusStrategy.csv')
     )
 
     def __init__(self):
@@ -85,7 +88,9 @@ class CrossoverStrategy(bt.Strategy):
                 d.close, period=self.params.sma1)
             self.inds[d]['sma2'] = bt.indicators.SimpleMovingAverage(
                 d.close, period=self.params.sma2)
-            self.inds[d]['cross'] = bt.indicators.CrossOver(self.inds[d]['sma1'], self.inds[d]['sma2'])  # plot=False
+            # self.inds[d]['cross'] = bt.indicators.CrossOver(self.inds[d]['sma1'], self.inds[d]['sma2'])  # plot=False
+            self.inds[d]['RSI'] = bt.indicators.RSI(d.close, period=self.params.RSI_period)
+            self.inds[d]['PPO'] = bt.indicators.PercentagePriceOscillator(d.close)
 
     def log(self, txt, dt=None):
         """The logger for the strategy.
@@ -215,7 +220,8 @@ class CrossoverStrategy(bt.Strategy):
             # if there are no orders already for this ticker
             if not self.o.get(d, None):
                 # check the signals
-                if self.inds[d]['cross'] == 1:
+                if self.inds[d]['sma1'] >= self.inds[d]['sma2'] \
+                        and self.inds[d]['RSI'] <= self.params.RSI_crossover_low and self.inds[d]['PPO'] > 0:
                     if not self.getposition(d).size:
                         if position_count < self.params.position_limit:
                             # self.log(f"Buying {dn} with close: {d.close[0]} or open {d.open[0]}", dt)
@@ -226,7 +232,8 @@ class CrossoverStrategy(bt.Strategy):
                             self.log(f"Cannot buy {dn} as I have {position_count} positions already", dt)
                     else:
                         self.log(f"Cannot buy {dn} as I already long", dt)
-                elif self.inds[d]['cross'] == -1:
+                elif self.inds[d]['sma1'] < self.inds[d]['sma2'] \
+                        and self.inds[d]['RSI'] >= self.params.RSI_crossover_high and self.inds[d]['PPO'] < 0:
                     if self.getposition(d).size:
                         self.o[d] = self.close(data=d, exectype=bt.Order.Market)
                         self.trade_count = self.trade_count + 1

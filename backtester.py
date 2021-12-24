@@ -14,6 +14,7 @@ from CustomSizer import CustomSizer
 from TickerData import TickerData
 from CrossoverStrategy import CrossoverStrategy
 from PumpStrategy import PumpStrategy
+from CrossoverPlusStrategy import CrossoverPlusStrategy
 # from PairStrategy import PairStrategy
 from Benchmark import Benchmark
 from CustomCommissionScheme import CustomCommissionScheme
@@ -149,12 +150,17 @@ class Backtester:
         tickers = self.tickers
         index = 0
         ignore = 0
+        limit = 0
         minimum_size_vectorised_false = 1
 
         for i, ticker in enumerate(tickers):
             ticker_data = self.data.loc[self.data['ticker'] == ticker]
             if self.config['global_options']['vectorised'] == 'True':
-                if ticker_data['date'].size > int(self.config['crossover_strategy_options']['sma2']):
+                if self.config['global_options']['strategy'] == 'CrossOver':
+                    limit = int(self.config['crossover_strategy_options']['crossover_sma2'])
+                elif self.config['global_options']['strategy'] == 'CrossOverPlus':
+                    limit = int(self.config['crossover_strategy_options']['crossover_plus_sma2'])
+                if ticker_data['date'].size > limit:
                     print(f"Adding {ticker} to strategy with {ticker_data['date'].size} rows")
                     self.cerebro.adddata(TickerData(dataname=ticker_data), name=ticker)
                     # self.cerebro.datas[index].plotinfo.plot = False
@@ -251,6 +257,8 @@ class Backtester:
             self.cerebro.addstrategy(PumpStrategy, verbose=True, log_file='strategy_log.csv')
         elif self.config['global_options']['strategy'] == 'Crossover':
             self.cerebro.addstrategy(CrossoverStrategy, verbose=True, log_file='strategy_log.csv')
+        elif self.config['global_options']['strategy'] == 'CrossoverPlus':
+            self.cerebro.addstrategy(CrossoverPlusStrategy, verbose=True, log_file='strategy_log.csv')
         else:
             raise ValueError(f"Strategy {self.config['global_options']['strategy']} must be Pump or Crossover.")
         self.cerebro.addsizer(CustomSizer, percents=float(self.config['global_options']['position_size']))
