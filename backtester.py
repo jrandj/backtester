@@ -158,8 +158,8 @@ class Backtester:
             if self.config['global_options']['vectorised'] == 'True':
                 if self.config['global_options']['strategy'] == 'CrossOver':
                     limit = int(self.config['crossover_strategy_options']['crossover_sma2'])
-                elif self.config['global_options']['strategy'] == 'CrossOverPlus':
-                    limit = int(self.config['crossover_strategy_options']['crossover_plus_sma2'])
+                elif self.config['global_options']['strategy'] == 'CrossoverPlus':
+                    limit = int(self.config['crossover_plus_strategy_options']['crossover_plus_sma2'])
                 if ticker_data['date'].size > limit:
                     print(f"Adding {ticker} to strategy with {ticker_data['date'].size} rows")
                     self.cerebro.adddata(TickerData(dataname=ticker_data), name=ticker)

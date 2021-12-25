@@ -89,7 +89,7 @@ class CrossoverPlusStrategy(bt.Strategy):
             self.inds[d]['sma2'] = bt.indicators.SimpleMovingAverage(
                 d.close, period=self.params.sma2)
             # self.inds[d]['cross'] = bt.indicators.CrossOver(self.inds[d]['sma1'], self.inds[d]['sma2'])  # plot=False
-            self.inds[d]['RSI'] = bt.indicators.RSI(d.close, period=self.params.RSI_period)
+            self.inds[d]['RSI'] = bt.indicators.RSI(d.close, period=self.params.RSI_period, safediv=True)
             self.inds[d]['PPO'] = bt.indicators.PercentagePriceOscillator(d.close)
 
     def log(self, txt, dt=None):
