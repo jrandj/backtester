@@ -139,7 +139,7 @@ end_date: The strategy end date. Cannot be after the latest date in the OHLCV da
 
 [global_options]
 strategy: The strategy to be backtested.
-	Allowed Values: Pump or Crossover.
+	Allowed Values: Pump, CrossoverPlus, or Crossover.
 position_limit: The number of positions that can be held.
 	Allowed Values: An int.
 position_size: The relative size of each position as a percent out of 100. Must equal 100 when multiplied with the position_limit. For example, a position_limit of 50 and a position_size of 2.
