@@ -163,7 +163,8 @@ class Backtester:
                 if ticker_data['date'].size > limit:
                     print(f"Adding {ticker} to strategy with {ticker_data['date'].size} rows")
                     self.cerebro.adddata(TickerData(dataname=ticker_data), name=ticker)
-                    # self.cerebro.datas[index].plotinfo.plot = False
+                    if self.config['global_options']['plot_tickers'] == 'False':
+                        self.cerebro.datas[index].plotinfo.plot = False
                     index = index + 1
                 else:
                     ignore = ignore + 1
@@ -172,7 +173,8 @@ class Backtester:
             else:
                 if ticker_data['date'].size > minimum_size_vectorised_false:
                     self.cerebro.adddata(TickerData(dataname=ticker_data), name=ticker)
-                    # self.cerebro.datas[index].plotinfo.plot = False
+                    if self.config['global_options']['plot_tickers'] == 'False':
+                        self.cerebro.datas[index].plotinfo.plot = False
                     print(f"Adding {ticker} to strategy with {ticker_data['date'].size} rows")
                     index = index + 1
                 else:
