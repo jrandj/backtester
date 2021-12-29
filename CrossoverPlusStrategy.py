@@ -88,7 +88,6 @@ class CrossoverPlusStrategy(bt.Strategy):
                 d.close, period=self.params.sma1)
             self.inds[d]['sma2'] = bt.indicators.SimpleMovingAverage(
                 d.close, period=self.params.sma2)
-            # self.inds[d]['cross'] = bt.indicators.CrossOver(self.inds[d]['sma1'], self.inds[d]['sma2'])  # plot=False
             self.inds[d]['RSI'] = bt.indicators.RSI(d.close, period=self.params.RSI_period, safediv=True)
             self.inds[d]['PPO'] = bt.indicators.PercentagePriceOscillator(d.close)
 
@@ -256,13 +255,15 @@ class CrossoverPlusStrategy(bt.Strategy):
                 end_date = data.datetime.date(0)
         self.end_date = end_date
         print(f"Strategy end date: {self.end_date}")
+        print(f"sma1 {self.params.sma1} sma2 {self.params.sma2} RSI_period {self.params.RSI_period} "
+              f"RSI_crossover_low {self.params.RSI_crossover_low} RSI_crossover_high {self.params.RSI_crossover_high}")
         self.elapsed_days = (self.end_date - self.start_date).days
         self.end_val = self.broker.get_value()
         self.cagr = 100 * ((self.end_val / self.start_val) ** (
                 1 / (self.elapsed_days / 365.25)) - 1)
-        print(f"Crossover strategy CAGR: {self.cagr:.4f}% (over {(self.elapsed_days / 365.25):.2f} years "
+        print(f"Strategy CAGR: {self.cagr:.4f}% (over {(self.elapsed_days / 365.25):.2f} years "
               f"with {self.trade_count} trades)")
-        print(f"Crossover strategy portfolio value: {self.end_val}")
+        print(f"Strategy portfolio value: {self.end_val}")
 
     def notify_trade(self, trade):
         """Handle trades and provide a notification from the broker based on the trade.

@@ -260,15 +260,23 @@ class Backtester:
         elif self.config['global_options']['strategy'] == 'Crossover':
             self.cerebro.addstrategy(CrossoverStrategy, verbose=True, log_file='strategy_log.csv')
         elif self.config['global_options']['strategy'] == 'CrossoverPlus':
-            self.cerebro.addstrategy(CrossoverPlusStrategy, verbose=True, log_file='strategy_log.csv')
+            # self.cerebro.addstrategy(CrossoverPlusStrategy, verbose=True, log_file='strategy_log.csv')
+            # build this yourself
+            self.cerebro.optstrategy(CrossoverPlusStrategy,
+                                     sma1=[20, 30, 40, 50, 60],
+                                     sma2=[50, 60, 70, 80, 90],
+                                     RSI_crossover_low=[20, 30, 40],
+                                     RSI_crossover_high=[60, 70, 80],
+                                     RSI_period=[14, 17, 21, 24, 28],
+                                     verbose=True, log_file='strategy_log.csv')
         else:
             raise ValueError(f"Strategy {self.config['global_options']['strategy']} must be Pump or Crossover.")
         self.cerebro.addsizer(CustomSizer, percents=float(self.config['global_options']['position_size']))
         print(f"Running {self.config['global_options']['strategy']} strategy...")
         if self.config['global_options']['vectorised'] == 'True':
-            results = self.cerebro.run(runonce=True)
+            results = self.cerebro.run(runonce=True, optreturn=False)  # optreturn defaults to True
         else:
-            results = self.cerebro.run(runonce=False)
+            results = self.cerebro.run(runonce=False, optreturn=False)  # optreturn defaults to True
         if self.config['global_options']['plot_enabled'] == 'True':
             if self.config['global_options']['plot_volume'] == 'True':
                 self.cerebro.plot()
@@ -413,8 +421,8 @@ class Backtester:
         if self.config['global_options']['cheat_on_close'] == 'True':
             self.cerebro.broker.set_coc(True)
         self.strategy_results = self.run_strategy()
-        self.portfolio_stats = self.strategy_results[0].analyzers.getbyname('pyfolio')
-        self.returns, self.positions, self.transactions, self.gross_lev = self.portfolio_stats.get_pf_items()
+        # self.portfolio_stats = self.strategy_results[0].analyzers.getbyname('pyfolio')
+        # self.returns, self.positions, self.transactions, self.gross_lev = self.portfolio_stats.get_pf_items()
         if self.config['global_options']['reports'] == 'True':
             self.run_strategy_reports()
         self.end_value = self.cerebro.broker.getvalue()
