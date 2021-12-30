@@ -260,15 +260,13 @@ class Backtester:
         elif self.config['global_options']['strategy'] == 'Crossover':
             self.cerebro.addstrategy(CrossoverStrategy, verbose=True, log_file='strategy_log.csv')
         elif self.config['global_options']['strategy'] == 'CrossoverPlus':
-            # self.cerebro.addstrategy(CrossoverPlusStrategy, verbose=True, log_file='strategy_log.csv')
-            # build this yourself
-            self.cerebro.optstrategy(CrossoverPlusStrategy,
-                                     sma1=[20, 30, 40, 50, 60],
-                                     sma2=[50, 60, 70, 80, 90],
-                                     RSI_crossover_low=[20, 30, 40],
-                                     RSI_crossover_high=[60, 70, 80],
-                                     RSI_period=[14, 17, 21, 24, 28],
-                                     verbose=True, log_file='strategy_log.csv')
+            for ii in range(20, 60, 20):
+                for jj in range(50, 90, 20):
+                    for kk in range(20, 40, 20):
+                        for ll in range(60, 80, 20):
+                            for mm in range(14, 28, 7):
+                                self.cerebro.optstrategy(CrossoverPlusStrategy, sma1=ii, sma2=jj, RSI_crossover_low=kk,
+                                                         RSI_crossover_high=ll, RSI_period=mm)
         else:
             raise ValueError(f"Strategy {self.config['global_options']['strategy']} must be Pump or Crossover.")
         self.cerebro.addsizer(CustomSizer, percents=float(self.config['global_options']['position_size']))
@@ -421,10 +419,17 @@ class Backtester:
         if self.config['global_options']['cheat_on_close'] == 'True':
             self.cerebro.broker.set_coc(True)
         self.strategy_results = self.run_strategy()
+        self.returns, self.positions, self.transactions, self.gross_lev = [None] * len(self.strategy_results[0]), [
+            None] * len(self.strategy_results[0]), [None] * len(self.strategy_results[0]), [None] * len(
+            self.strategy_results[0])
+        for idx, val in enumerate(self.strategy_results[0]):
+            self.portfolio_stats = val.analyzers.getbyname('pyfolio')
+            self.returns[idx], self.positions[idx], self.transactions[idx], self.gross_lev[idx] \
+                = self.portfolio_stats.get_pf_items()
+            if self.config['global_options']['reports'] == 'True':
+                self.run_strategy_reports()
         # self.portfolio_stats = self.strategy_results[0].analyzers.getbyname('pyfolio')
         # self.returns, self.positions, self.transactions, self.gross_lev = self.portfolio_stats.get_pf_items()
-        if self.config['global_options']['reports'] == 'True':
-            self.run_strategy_reports()
         self.end_value = self.cerebro.broker.getvalue()
 
         # run the benchmark
