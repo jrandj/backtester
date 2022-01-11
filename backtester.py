@@ -283,15 +283,6 @@ class Backtester:
                                                              RSI_crossover_high=ll, RSI_period=mm)
             else:
                 self.cerebro.addstrategy(CrossoverPlusStrategy, verbose=True, log_file='strategy_log.csv')
-            # for ii in range(20, 60, 20):
-            #     for jj in range(50, 90, 20):
-            #         for kk in range(20, 40, 20):
-            #             for ll in range(60, 80, 20):
-            #                 for mm in range(14, 28, 7):
-            #                     self.cerebro.optstrategy(CrossoverPlusStrategy, sma1=ii, sma2=jj,
-            #                                              RSI_crossover_low=kk,
-            #                                              RSI_crossover_high=ll, RSI_period=mm)
-            # self.cerebro.addstrategy(CrossoverPlusStrategy, verbose=True, log_file='strategy_log.csv')
         else:
             raise ValueError(f"Strategy {self.config['global_options']['strategy']} must be Pump or Crossover.")
         self.cerebro.addsizer(CustomSizer, percents=float(self.config['global_options']['position_size']))
