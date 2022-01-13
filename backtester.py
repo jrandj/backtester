@@ -154,33 +154,39 @@ class Backtester:
         minimum_size_vectorised_false = 1
 
         for i, ticker in enumerate(tickers):
-            ticker_data = self.data.loc[self.data['ticker'] == ticker]
-            if self.config['global_options']['vectorised'] == 'True':
-                if self.config['global_options']['strategy'] == 'CrossOver':
-                    limit = int(self.config['crossover_strategy_options']['crossover_sma2'])
-                elif self.config['global_options']['strategy'] == 'CrossoverPlus':
-                    limit = int(self.config['crossover_plus_strategy_options']['crossover_plus_sma2'])
-                if ticker_data['date'].size > limit:
-                    print(f"Adding {ticker} to strategy with {ticker_data['date'].size} rows")
-                    self.cerebro.adddata(TickerData(dataname=ticker_data), name=ticker)
-                    if self.config['global_options']['plot_tickers'] == 'False':
-                        self.cerebro.datas[index].plotinfo.plot = False
-                    index = index + 1
+            if ticker not in self.config['data']['tickers_for_exclusion'].split(','):
+                ticker_data = self.data.loc[self.data['ticker'] == ticker]
+                if self.config['global_options']['vectorised'] == 'True':
+                    if self.config['global_options']['strategy'] == 'Crossover':
+                        limit = int(self.config['crossover_strategy_options']['crossover_sma2'])
+                    elif self.config['global_options']['strategy'] == 'CrossoverPlus':
+                        limit = int(self.config['crossover_plus_strategy_options']['crossover_plus_sma2'])
+                    elif self.config['global_options']['strategy'] == 'Pump':
+                        limit = max(int(self.config['pump_strategy_options']['price_average_period']),
+                                    int(self.config['pump_strategy_options']['volume_average_period']))
+                    if ticker_data['date'].size > limit:
+                        print(f"Adding {ticker} to strategy with {ticker_data['date'].size} rows")
+                        self.cerebro.adddata(TickerData(dataname=ticker_data), name=ticker)
+                        if self.config['global_options']['plot_tickers'] == 'False':
+                            self.cerebro.datas[index].plotinfo.plot = False
+                        index = index + 1
+                    else:
+                        ignore = ignore + 1
+                        print(f"Did not add {ticker} to strategy due to insufficient data with only "
+                              f"{ticker_data['date'].size} rows")
                 else:
-                    ignore = ignore + 1
-                    print(f"Did not add {ticker} to strategy due to insufficient data with only "
-                          f"{ticker_data['date'].size} rows")
+                    if ticker_data['date'].size > minimum_size_vectorised_false:
+                        self.cerebro.adddata(TickerData(dataname=ticker_data), name=ticker)
+                        if self.config['global_options']['plot_tickers'] == 'False':
+                            self.cerebro.datas[index].plotinfo.plot = False
+                        print(f"Adding {ticker} to strategy with {ticker_data['date'].size} rows")
+                        index = index + 1
+                    else:
+                        ignore = ignore + 1
+                        print(f"Did not add {ticker} to strategy due to insufficient data with only "
+                              f"{ticker_data['date'].size} rows")
             else:
-                if ticker_data['date'].size > minimum_size_vectorised_false:
-                    self.cerebro.adddata(TickerData(dataname=ticker_data), name=ticker)
-                    if self.config['global_options']['plot_tickers'] == 'False':
-                        self.cerebro.datas[index].plotinfo.plot = False
-                    print(f"Adding {ticker} to strategy with {ticker_data['date'].size} rows")
-                    index = index + 1
-                else:
-                    ignore = ignore + 1
-                    print(f"Did not add {ticker} to strategy due to insufficient data with only "
-                          f"{ticker_data['date'].size} rows")
+                print(f"Did not add {ticker} as it is intentionally excluded.")
         print(f"Loaded data for {index} tickers and discarded data for {ignore} tickers")
 
     def run_strategy_reports(self):

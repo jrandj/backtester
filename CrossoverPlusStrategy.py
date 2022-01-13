@@ -65,6 +65,7 @@ class CrossoverPlusStrategy(bt.Strategy):
         ('RSI_crossover_low', int(config['crossover_plus_strategy_options']['RSI_crossover_low'])),
         ('RSI_crossover_high', int(config['crossover_plus_strategy_options']['RSI_crossover_high'])),
         ('position_limit', int(config['global_options']['position_limit'])),
+        ('plot_tickers', config['global_options']['plot_tickers']),
         ('log_file', 'CrossoverPlusStrategy.csv')
     )
 
@@ -90,6 +91,11 @@ class CrossoverPlusStrategy(bt.Strategy):
                 d.close, period=self.params.sma2)
             self.inds[d]['RSI'] = bt.indicators.RSI(d.close, period=self.params.RSI_period, safediv=True)
             self.inds[d]['PPO'] = bt.indicators.PercentagePriceOscillator(d.close)
+            if self.params.plot_tickers == "False":
+                self.inds[d]['sma1'].plotinfo.subplot = False
+                self.inds[d]['sma2'].plotinfo.subplot = False
+                self.inds[d]['RSI'].plotinfo.subplot = False
+                self.inds[d]['PPO'].plotinfo.subplot = False
 
     def log(self, txt, dt=None):
         """The logger for the strategy.
@@ -255,8 +261,8 @@ class CrossoverPlusStrategy(bt.Strategy):
                 end_date = data.datetime.date(0)
         self.end_date = end_date
         print(f"Strategy end date: {self.end_date}")
-        print(f"sma1 {self.params.sma1} sma2 {self.params.sma2} RSI_period {self.params.RSI_period} "
-              f"RSI_crossover_low {self.params.RSI_crossover_low} RSI_crossover_high {self.params.RSI_crossover_high}")
+        # print(f"sma1 {self.params.sma1} sma2 {self.params.sma2} RSI_period {self.params.RSI_period} "
+        #       f"RSI_crossover_low {self.params.RSI_crossover_low} RSI_crossover_high {self.params.RSI_crossover_high}")
         self.elapsed_days = (self.end_date - self.start_date).days
         self.end_val = self.broker.get_value()
         self.cagr = 100 * ((self.end_val / self.start_val) ** (

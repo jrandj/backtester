@@ -62,6 +62,7 @@ class CrossoverStrategy(bt.Strategy):
         ('sma1', int(config['crossover_strategy_options']['crossover_sma1'])),
         ('sma2', int(config['crossover_strategy_options']['crossover_sma2'])),
         ('position_limit', int(config['global_options']['position_limit'])),
+        ('plot_tickers', config['global_options']['plot_tickers']),
         ('log_file', 'CrossoverStrategy.csv')
     )
 
@@ -86,6 +87,10 @@ class CrossoverStrategy(bt.Strategy):
             self.inds[d]['sma2'] = bt.indicators.SimpleMovingAverage(
                 d.close, period=self.params.sma2)
             self.inds[d]['cross'] = bt.indicators.CrossOver(self.inds[d]['sma1'], self.inds[d]['sma2'])  # plot=False
+            if self.params.plot_tickers == "False":
+                self.inds[d]['sma1'].plotinfo.subplot = False
+                self.inds[d]['sma2'].plotinfo.subplot = False
+                self.inds[d]['cross'].plotinfo.subplot = False
 
     def log(self, txt, dt=None):
         """The logger for the strategy.

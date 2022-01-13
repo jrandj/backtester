@@ -71,6 +71,7 @@ class PumpStrategy(bt.Strategy):
         ('price_comparison_upper_bound', float(config['pump_strategy_options']['price_comparison_upper_bound'])),
         ('position_limit', int(config['global_options']['position_limit'])),
         ('profit_factor', float(config['pump_strategy_options']['profit_factor'])),
+        ('plot_tickers', config['global_options']['plot_tickers']),
         ('log_file', 'PumpStrategy.csv')
     )
 
@@ -93,6 +94,9 @@ class PumpStrategy(bt.Strategy):
             self.inds[d]['volume_average'] = bt.indicators.SimpleMovingAverage(d.volume,
                                                                                period=self.params.volume_average_period)
             self.inds[d]['price_max'] = bt.indicators.Highest(d.close, period=self.params.price_average_period)
+            if self.params.plot_tickers == "False":
+                self.inds[d]['volume_average'].plotinfo.subplot = False
+                self.inds[d]['price_max'].plotinfo.subplot = False
 
     def log(self, txt, dt=None):
         """The logger for the strategy.
