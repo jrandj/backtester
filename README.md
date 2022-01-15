@@ -41,15 +41,27 @@ These models extract signals from a time series history to predict future values
 
 An implementation of a 50-day and 200-day moving average crossover strategy is available in [CrossoverStrategy](CrossoverStrategy.py). This implementation is long only. This strategy when run for all data (2,172 stocks with 456 discarded due to insufficient data quantity for the indicators) returns a CAGR of 7.79%. This outperforms the XJO benchmark for this period by 2.76%.
 
+<p align="center">
+	<img src="/res/Crossover.png" width="600" height="350">
+</p>
+
 ##### CrossoverPlus
 
 An implementation of a strategy using 50-day and 200-day moving averages, the Percent Price Oscillator (PPO) indicator, and the Relative Strength Index (RSI) indicator is available in [CrossoverStrategyPlus](CrossoverStrategyPlus.py). This implementation is long only. This strategy when run for all data (2,461 stocks with 166 discarded due to insufficient data quantity for the indicators) returns a CAGR of 5.64%. This outperforms the XJO benchmark for this period by 0.61%.
 
 Data for the RRP ticker is excluded as the returns are not accurate.
 
+<p align="center">
+	<img src="/res/CrossoverPlus.png" width="600" height="350">
+</p>
+
 ##### Pump
 
-An implementation of a strategy based on large volume, small price changes, and local price maxima is available in [Pump][PumpStrategy.py]. This implementation is long only. This strategy when run for all data (2,377 stocks with 250 discarded due to insufficient data quantity for the indicators) returns a CAGR of 1.42%. This underperforms the XJO benchmark for this period by 3.6%.
+An implementation of a strategy based on large volume, small price changes, and local price maxima is available in [Pump](PumpStrategy.py). This implementation is long only. This strategy when run for all data (2,377 stocks with 250 discarded due to insufficient data quantity for the indicators) returns a CAGR of 1.42%. This underperforms the XJO benchmark for this period by 3.6%.
+
+<p align="center">
+	<img src="/res/Pump.png" width="600" height="350">
+</p>
 
 ### Statistical Arbitrage
 
