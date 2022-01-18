@@ -4,9 +4,24 @@ Backtester is a Python application for testing trading strategies against histor
 
 ## Architecture
 
+The package structure is shown below:
+	<p align="center">
+	<img src="/res/packages.png">
+	</p>
+
+The class structure is shown below:
+	<p align="center">
+	<img src="/res/classes.png">
+	</p>
+
+The diagrams have been generated using pyreverse:
+```bash
+pyreverse -o png .
+```
+
 ## Data
 
-The data is OHLCV with the an example shown below:
+The data is OHLCV with an example shown below:
 
 | date       | open      | high      | low       | close     | volume | ticker |
 |------------|-----------|-----------|-----------|-----------|--------|--------|
@@ -57,7 +72,7 @@ Data for the RRP ticker is excluded as the returns are not accurate.
 
 ##### Pump
 
-An implementation of a strategy based on large volume, small price changes, and local price maxima is available in [Pump](PumpStrategy.py). This implementation is long only. This strategy when run for all data (2,377 stocks with 250 discarded due to insufficient data quantity for the indicators) returns a CAGR of 1.42% with 2,171 trades. This underperforms the XJO benchmark for this period by 3.6%.
+An implementation of a strategy attempting to detect "pump and dump" schemes based on large volume, small price changes, and local price maxima is available in [Pump](PumpStrategy.py). This implementation is long only. This strategy when run for all data (2,377 stocks with 250 discarded due to insufficient data quantity for the indicators) returns a CAGR of 1.42% with 2,171 trades. This underperforms the XJO benchmark for this period by 3.6%.
 
 <p align="center">
 	<img src="/res/Pump.png" width="600" height="350">
@@ -151,12 +166,12 @@ The `config.properties` file contains configuration for the backtester applicati
 | data                            | path                         | The folder directory containing OLHCV data.                                                                                                                                                                                                                                                                                                                                                                                                              | A valid directory.                 |
 | data                            | benchmark                    | The benchmarking ticker.                                                                                                                                                                                                                                                                                                                                                                                                                                 | A ticker from the OHLCV dataframe. |
 | data                            | bulk                         | A flag used to decide whether to look at all data from path or use the tickers field.                                                                                                                                                                                                                                                                                                                                                                    | A Boolean.                         |
-| data                            | tickers                      | A list of comma separated codes from the consolidated OHLCV data read from path. Only used when bulk is set to False.                                                                                                                                                                                                                                                                                                                                    | Comma separated list               |
+| data                            | tickers                      | A list of comma separated codes from the consolidated OHLCV data read from path. Only used when bulk is set to False.                                                                                                                                                                                                                                                                                                                                    | Comma separated list.               |
 | data                            | tickers_for_exclusion        | A list of comma separated codes to exclude.                                                                                                                                                                                                                                                                                                                                                                                                              | Comma separated list.              |
 | data                            | start_date                   | The strategy start date. Cannot be earlier than the earliest date in the OHLCV dataframe.                                                                                                                                                                                                                                                                                                                                                                | Date (DD/MM/YYYY).                 |
 | data                            | end_date                     | The strategy end date. Cannot be after the latest date in the OHLCV dataframe.                                                                                                                                                                                                                                                                                                                                                                           | Date (DD/MM/YYYY).                 |
 | global_options                  | strategy                     | The strategy to be backtested.                                                                                                                                                                                                                                                                                                                                                                                                                           | Pump, CrossoverPlus, or Crossover. |
-| global_options                  | position_limit               | The number of positions that can be held.                                                                                                                                                                                                                                                                                                                                                                                                                | An int                             |
+| global_options                  | position_limit               | The number of positions that can be held.                                                                                                                                                                                                                                                                                                                                                                                                                | An int.                             |
 | global_options                  | position_size                | The relative size of each position as a percent out of 100. Must equal 100 when multiplied with the position_limit. For example, a position_limit of 50 and a position_size of 2.                                                                                                                                                                                                                                                                        | An int.                            |
 | global_options                  | plot_enabled                 | A flag used to decide whether to plot the strategy performance.                                                                                                                                                                                                                                                                                                                                                                                          | A Boolean.                         |
 | global_options                  | plot_tickers                 | A flag used to decide whether to plot individual tickers.                                                                                                                                                                                                                                                                                                                                                                                                | A Boolean.                         |
