@@ -25,67 +25,75 @@ class Backtester:
 
     Attributes
     ----------
-    returns.index : pandas.core.indexes.datetimes.DatetimeIndex
-        A datetime index for the strategy returns.
-    benchmark_returns.index : pandas.core.indexes.datetimes.DatetimeIndex
-        A datetime index for the benchmark returns.
-    cash : float
-        The cash available for the strategies.
-    bulk : str
-        True if all tickers are to be used, False if the tickers are being provided.
-    data : pandas.core.frame.DataFrame
-        The dataframe containing all OHCLV ticker data.
     asx300_constituents : pandas.core.frame.DataFrame
         The dataframe containing tickers of ASX300 stocks at a point in time.
     benchmark_data : pandas.core.frame.DataFrame
         The dataframe containing the benchmark OHCLV data.
-    cerebro : backtrader.cerebro.Cerebro
-        The cerebro instance for the strategy.
-    comminfo : FixedCommissionScheme.FixedCommissionScheme
-        The broker commissions.
-    returns : pandas.core.series.Series
-        The returns for the strategy.
-    positions : pandas.core.frame.DataFrame
-        A dataframe containing the daily cash and stock positions for the strategy.
-    transactions : pandas.core.frame.DataFrame
-        A dataframe containing the transactions for the strategy.
-    gross_lev : pandas.core.series.Series
-        The leverage for the strategy.
-    benchmark_returns : pandas.core.series.Series
-        The returns for the benchmark.
-    benchmark_positions : pandas.core.frame.DataFrame
-        A dataframe containing the daily cash and stock positions for the benchmark.
-    benchmark_transactions : pandas.core.frame.DataFrame
-        A dataframe containing the transactions for the benchmark.
-    benchmark_gross_lev : pandas.core.series.Series
-        The leverage for the benchmark.
-    end_value : float
-        The final portfolio value for the strategy.
     benchmark_end_value : float
         The final portfolio value for the benchmark.
+    benchmark_gross_lev : pandas.core.series.Series
+        The leverage for the benchmark.
+    benchmark_positions : pandas.core.frame.DataFrame
+        A dataframe containing the daily cash and stock positions for the benchmark.
+    benchmark_results : list
+        The results for the benchmark.
+    benchmark_returns : pandas.core.series.Series
+        The returns for the benchmark.
+    benchmark_stats : backtrader.analyzers.pyfolio.PyFolio
+        The statistics for the benchmark.
+    benchmark_transactions : pandas.core.frame.DataFrame
+        A dataframe containing the transactions for the benchmark.
+    cerebro : backtrader.cerebro.Cerebro
+        The cerebro instance for the strategy.
+    cerebro_benchmark : backtrader.cerebro.Cerebro
+        The cerebro instance for the benchmark.
+    comminfo : FixedCommissionScheme.FixedCommissionScheme
+        The broker commissions.
+    config : configparser.RawConfigParser
+        The object that will read configuration from the configuration file.
+    data : pandas.core.frame.DataFrame
+        The dataframe containing all OHCLV ticker data.
+    end_value : float
+        The final portfolio value for the strategy.
+    gross_lev : pandas.core.series.Series
+        The leverage for the strategy.
+    portfolio_stats : backtrader.analyzers.pyfolio.PyFolio
+        The statistics for the portfolio.
+    positions : pandas.core.frame.DataFrame
+        A dataframe containing the daily cash and stock positions for the strategy.
+    returns : pandas.core.series.Series
+        The returns for the strategy.
+    strategy_results : list
+        The results for the strategy.
+    tickers : list
+        The tickers for the strategy (if not in bulk mode).
+    transactions : pandas.core.frame.DataFrame
+        A dataframe containing the transactions for the strategy.
 
     Methods
     -------
-    format_time()
-        Format the time in hh:mm:ss.
-    global_settings():
-        Apply global settings.
     add_benchmark_data():
         Add the benchmark data to the benchmark strategy.
     add_strategy_data():
         Add the ticker data to the strategy.
-    run_strategy_reports():
-        Run quantstats reports for the strategy.
-    run_benchmark_reports():
-        Run quantstats reports for the benchmark.
-    run_benchmark():
-        Run the benchmark strategy.
-    run_strategy():
-        Run the strategy.
     clean_logs():
         Remove the existing log files.
+    find_correlation():
+        TBC.
+    format_time()
+        Format the time in hh:mm:ss.
+    global_settings():
+        Apply global settings.
     import_data():
         Import OHLCV data.
+    run_benchmark():
+        Run the benchmark strategy.
+    run_benchmark_reports():
+        Run quantstats reports for the benchmark.
+    run_strategy():
+        Run the strategy.
+    run_strategy_reports():
+        Run quantstats reports for the strategy.
     """
 
     @staticmethod
