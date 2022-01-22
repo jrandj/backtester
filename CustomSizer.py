@@ -9,6 +9,8 @@ class CustomSizer(bt.Sizer):
 
     Attributes
     ----------
+    config : configparser.RawConfigParser
+        The object that will read configuration from the configuration file.
     params : tuple
         Parameters for the sizer.
 

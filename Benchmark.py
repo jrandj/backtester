@@ -9,20 +9,22 @@ class Benchmark(bt.Strategy):
 
     Attributes
     ----------
-    params : tuple
-        The local parameters for the strategy.
-    start_val : float
-        The starting value of the strategy.
-    end_val : float
-        The ending value of the strategy.
-    start_date : datetime.date
-        The starting date of the strategy.
-    end_date : datetime.date
-        The ending date of the strategy.
-    elapsed_days : int
-        The amount of days between the start and end date.
     cagr : float
         The Compound Annual Growth Rate (CAGR) for the strategy.
+    elapsed_days : int
+        The amount of days between the start and end date.
+    end_date : datetime.date
+        The ending date of the strategy.
+    end_val : float
+        The ending value of the strategy.
+    o : backtrader.order.BuyOrder
+        The order object.
+    params : tuple
+        The local parameters for the strategy.
+    start_date : datetime.date
+        The starting date of the strategy.
+    start_val : float
+        The starting value of the strategy.
 
     Methods
     -------
