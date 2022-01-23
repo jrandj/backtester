@@ -11,26 +11,28 @@ class CrossoverPlusStrategy(bt.Strategy):
 
     Attributes
     ----------
-    params : tuple
-        Parameters for the strategy.
-    o : dict
-        The orders for all tickers.
-    inds : dict
-        The indicators for all tickers.
-    start_val : float
-        The starting value of the strategy.
-    end_val : float
-        The ending value of the strategy.
-    start_date : datetime.date
-        The starting date of the strategy.
-    end_date : datetime.date
-        The ending date of the strategy.
-    elapsed_days : int
-        The amount of days between the start and end date.
     cagr : float
         The Compound Annual Growth Rate (CAGR) for the strategy.
+    config : configparser.RawConfigParser
+        The object that will read configuration from the configuration file.
     d_with_len : list
         The subset of data that is guaranteed to be available.
+    elapsed_days : int
+        The amount of days between the start and end date.
+    end_date : datetime.date
+        The ending date of the strategy.
+    end_val : float
+        The ending value of the strategy.
+    inds : dict
+        The indicators for all tickers.
+    o : dict
+        The orders for all tickers.
+    params : tuple
+        Parameters for the strategy.
+    start_date : datetime.date
+        The starting date of the strategy.
+    start_val : float
+        The starting value of the strategy.
     trade_count : int
         The total number of trades executed by the strategy.
 
@@ -38,20 +40,20 @@ class CrossoverPlusStrategy(bt.Strategy):
     -------
     log()
         The logger for the strategy.
-    notify_order()
-        Handle orders and provide a notification from the broker based on the order.
-    start()
-        Runs at the start. Records starting portfolio value and time.
-    prenext()
-        The method is used all data points once the minimum period of all data/indicators has been met.
-    nextstart()
-        This method runs exactly once to mark the switch between prenext and next.
     next()
         The method used for all remaining data points once the minimum period of all data/indicators has been met.
-    stop()
-        Runs when the strategy stops. Record the final value of the portfolio and calculate the CAGR.
+    nextstart()
+        This method runs exactly once to mark the switch between prenext and next.
+    notify_order()
+        Handle orders and provide a notification from the broker based on the order.
     notify_trade()
         Handle trades and provide a notification from the broker based on the trade.
+    prenext()
+        The method is used all data points once the minimum period of all data/indicators has been met.
+    start()
+        Runs at the start. Records starting portfolio value and time.
+    stop()
+        Runs when the strategy stops. Record the final value of the portfolio and calculate the CAGR.
     """
     config = configparser.RawConfigParser()
     config.read('config.properties')
