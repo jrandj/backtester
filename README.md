@@ -1,7 +1,9 @@
 <p align="center">
     <br>
     <br>
-	[![Conda version](https://img.shields.io/badge/Anaconda.org-4.13.0-blue.svg?style=flat-square)](https://docs.conda.io/projects/conda/en/latest/release-notes.html#id1)
+    <a href="https://img.shields.io/badge/Anaconda.org-4.13.0-blue.svg?style=flat-square" alt="Conda version">
+        <img src="https://docs.conda.io/projects/conda/en/latest/release-notes.html#id1" />
+    </a>
 </p>
 
 # Backtester
