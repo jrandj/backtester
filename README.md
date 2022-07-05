@@ -4,6 +4,9 @@
     <a href="https://docs.conda.io/projects/conda/en/latest/release-notes.html#id1" alt="Conda version">
         <img src="https://img.shields.io/badge/Anaconda.org-4.13.0-blue.svg?style=flat-square" />
     </a>
+    <a href="https://img.shields.io/github/license/jrandj/backtester" alt="License">
+        <img src="https://img.shields.io/github/license/jrandj/backtester" />
+    </a>
 </p>
 
 # Backtester
