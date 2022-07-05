@@ -1,3 +1,9 @@
+<p align="center">
+    <br>
+    <br>
+	[![Conda version](https://img.shields.io/badge/Anaconda.org-4.13.0-blue.svg?style=flat-square)](https://docs.conda.io/projects/conda/en/latest/release-notes.html#id1)
+</p>
+
 # Backtester
 
 Backtester is a Python application for testing trading strategies against historical data. Backtester is heavily reliant on the [Backtrader](https://github.com/mementum/backtrader) framework.
@@ -110,7 +116,7 @@ This strategy aims to profit from index funds which are required to periodically
 
 The following pre-requisites are required:
 
-1. [Python 3.9.7](https://www.python.org/downloads/release/python-397/).
+1. [Python 3.9.12](https://www.python.org/downloads/release/python-3912/).
 1. [Anaconda](https://www.anaconda.com/products/individual).
 
 Once these are installed:
