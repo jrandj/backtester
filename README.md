@@ -1,8 +1,8 @@
 <p align="center">
     <br>
     <br>
-    <a href="https://img.shields.io/badge/Anaconda.org-4.13.0-blue.svg?style=flat-square" alt="Conda version">
-        <img src="https://docs.conda.io/projects/conda/en/latest/release-notes.html#id1" />
+    <a href="https://docs.conda.io/projects/conda/en/latest/release-notes.html#id1" alt="Conda version">
+        <img src="https://img.shields.io/badge/Anaconda.org-4.13.0-blue.svg?style=flat-square" />
     </a>
 </p>
 
