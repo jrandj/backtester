@@ -142,7 +142,7 @@ class Backtester:
         print(f"Adding ticker to benchmark: {self.config['data']['benchmark']}")
         self.cerebro_benchmark.adddata(
             TickerData(
-                dataname=self.benchmark_data.loc[self.benchmark_data['ticker'] == self.config['data']['benchmark']]),
+                dataname=self.benchmark_data.loc[self.benchmark_data['Ticker'] == self.config['data']['benchmark']]),
             name=self.config['data']['benchmark'])
 
     def add_strategy_data(self):
@@ -163,7 +163,7 @@ class Backtester:
 
         for i, ticker in enumerate(tickers):
             if ticker not in self.config['data']['tickers_for_exclusion'].split(','):
-                ticker_data = self.data.loc[self.data['ticker'] == ticker]
+                ticker_data = self.data.loc[self.data['Ticker'] == ticker]
                 if self.config['global_options']['vectorised'] == 'True':
                     if self.config['global_options']['strategy'] == 'Crossover':
                         limit = int(self.config['crossover_strategy_options']['crossover_sma2'])
@@ -172,8 +172,8 @@ class Backtester:
                     elif self.config['global_options']['strategy'] == 'Pump':
                         limit = max(int(self.config['pump_strategy_options']['price_average_period']),
                                     int(self.config['pump_strategy_options']['volume_average_period']))
-                    if ticker_data['date'].size > limit:
-                        print(f"Adding {ticker} to strategy with {ticker_data['date'].size} rows")
+                    if ticker_data['Date'].size > limit:
+                        print(f"Adding {ticker} to strategy with {ticker_data['Date'].size} rows")
                         self.cerebro.adddata(TickerData(dataname=ticker_data), name=ticker)
                         if self.config['global_options']['plot_tickers'] == 'False':
                             self.cerebro.datas[index].plotinfo.plot = False
@@ -181,18 +181,18 @@ class Backtester:
                     else:
                         ignore = ignore + 1
                         print(f"Did not add {ticker} to strategy due to insufficient data with only "
-                              f"{ticker_data['date'].size} rows")
+                              f"{ticker_data['Date'].size} rows")
                 else:
-                    if ticker_data['date'].size > minimum_size_vectorised_false:
+                    if ticker_data['Date'].size > minimum_size_vectorised_false:
                         self.cerebro.adddata(TickerData(dataname=ticker_data), name=ticker)
                         if self.config['global_options']['plot_tickers'] == 'False':
                             self.cerebro.datas[index].plotinfo.plot = False
-                        print(f"Adding {ticker} to strategy with {ticker_data['date'].size} rows")
+                        print(f"Adding {ticker} to strategy with {ticker_data['Date'].size} rows")
                         index = index + 1
                     else:
                         ignore = ignore + 1
                         print(f"Did not add {ticker} to strategy due to insufficient data with only "
-                              f"{ticker_data['date'].size} rows")
+                              f"{ticker_data['Date'].size} rows")
             else:
                 print(f"Did not add {ticker} as it is intentionally excluded.")
         print(f"Loaded data for {index} tickers and discarded data for {ignore} tickers")
@@ -346,7 +346,7 @@ class Backtester:
         # correlation_data = self.data.set_index('date')
         returns_matrix = pd.DataFrame(index=self.data.index, columns=self.tickers)
         for ticker in self.tickers:
-            ticker_data = self.data.loc[self.data['ticker'] == ticker]
+            ticker_data = self.data.loc[self.data['Ticker'] == ticker]
             returns_matrix[ticker] = ticker_data['close'].pct_change()
             print(f"Adding {ticker}")
         correlation_matrix = returns_matrix.corr()
@@ -383,7 +383,7 @@ class Backtester:
         elif os.path.isfile(os.path.join(directory, "data" + os.extsep + "csv")):
             print(f"Reading data from consolidated .csv")
             data = pd.read_csv(os.path.join(directory, "data" + os.extsep + "csv"), header=0, index_col=False,
-                               parse_dates=["date"], dayfirst=True)
+                               parse_dates=["Date"], dayfirst=True)
             data.to_hdf(os.path.join(directory, "data" + os.extsep + "h5"), 'table', append=True)
         else:
             print(f"Reading data from .csv in directory and creating consolidated files for future use")
@@ -391,27 +391,27 @@ class Backtester:
             all_files = glob.glob(os.path.join(directory, "*.csv"))
 
             def dateparse(x):
-                return pd.datetime.strptime(x, "%d/%m/%Y")
+                return pd.datetime.strptime(x, "%Y%m%d")
 
             for file_name in all_files:
-                if file_name != os.path.join(directory, self.config['data']['benchmark'] + os.extsep + "csv"):
-                    x = pd.read_csv(file_name, names=["date", "open", "high", "low", "close", "volume", "ticker"],
-                                    parse_dates=["date"], dayfirst=True, dtype={"ticker": str}, skiprows=1,
+                if file_name != os.path.join(directory, self.config['data']['benchmark'] + os.extsep + "csv") and \
+                        file_name != os.path.join(directory, "asx300_constituents_221021" + os.extsep + "csv"):
+                    x = pd.read_csv(file_name, names=["Date", "Open", "High", "Low", "Close", "Volume", "Ticker"],
+                                    parse_dates=["Date"], dayfirst=True, dtype={"Ticker": str}, skiprows=1,
                                     date_parser=dateparse)
                     data = pd.concat([data, x], ignore_index=True)
                     os.path.join(directory, "data" + os.extsep + "csv")
-            data.to_csv(os.path.join(directory, "data" + os.extsep + "csv"), sep=",",
-                        header=["date", "open", "high", "low", "close", "volume", "ticker"], index=False)
+            data.to_csv(os.path.join(directory, "data" + os.extsep + "csv"), sep=",", index=False, date_format='%Y%m%d')
             data.to_hdf(os.path.join(directory, "data" + os.extsep + "h5"), 'table', append=True)
 
         # read benchmark data
         benchmark_data = pd.read_csv(
             os.path.join(directory, self.config['data']['benchmark'] + os.extsep + "csv"),
-            parse_dates=['date'], dayfirst=True)
+            parse_dates=['Date'], dayfirst=True)
 
         # apply date ranges
-        comparison_start = max(data['date'].min(), benchmark_data['date'].min())
-        comparison_end = min(data['date'].max(), benchmark_data['date'].max())
+        comparison_start = max(data['Date'].min(), benchmark_data['Date'].min())
+        comparison_end = min(data['Date'].max(), benchmark_data['Date'].max())
         # allow override from config
         if len(self.config['data']['start_date']) > 0 and pd.to_datetime(self.config['data']['start_date'],
                                                                          format='%d/%m/%Y') < comparison_end:
@@ -419,9 +419,9 @@ class Backtester:
         if len(self.config['data']['end_date']) > 0 and pd.to_datetime(self.config['data']['end_date'],
                                                                        format='%d/%m/%Y') > comparison_start:
             comparison_end = pd.to_datetime(self.config['data']['end_date'])
-        data = data[(data['date'] > comparison_start) & (data['date'] < comparison_end)]
+        data = data[(data['Date'] > comparison_start) & (data['Date'] < comparison_end)]
         benchmark_data = benchmark_data[
-            (benchmark_data['date'] > comparison_start) & (benchmark_data['date'] < comparison_end)]
+            (benchmark_data['Date'] > comparison_start) & (benchmark_data['Date'] < comparison_end)]
         print(f"Data range is between {comparison_start.date()} and {comparison_end.date()}")
         return data, benchmark_data, asx300_constituents
 
@@ -436,9 +436,9 @@ class Backtester:
         # import data
         self.data, self.benchmark_data, self.asx300_constituents = self.import_data()
         if self.config['data']['bulk'] == 'True' and self.config['global_options']['small_cap_only'] == 'True':
-            self.tickers = set(self.data['ticker'].unique()) - set(self.asx300_constituents['Ticker'])
+            self.tickers = set(self.data['Ticker'].unique()) - set(self.asx300_constituents['Ticker'])
         elif self.config['data']['bulk'] == 'True' and self.config['global_options']['small_cap_only'] == 'False':
-            self.tickers = self.data['ticker'].unique()
+            self.tickers = self.data['Ticker'].unique()
         else:
             self.tickers = self.config['data']['tickers'].split(',')
 
