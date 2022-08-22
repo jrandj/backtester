@@ -207,9 +207,9 @@ class Backtester:
         ------
 
         """
-        self.returns.index = self.returns.index.tz_convert(None)
-        qs.reports.html(self.returns, output='strategy-stats-' + time.strftime("%Y%d%m-%H%M%S") + '.html',
-                        title='Strategy Performance')
+        self.returns[0].index = self.returns[0].index.tz_convert(None)
+        qs.reports.html(self.returns[0], output=os.path.join("out/strategy-stats-" + time.strftime(
+            "%Y%d%m-%H%M%S") + os.extsep + ".html"), title='Strategy Performance')
 
     def run_benchmark_reports(self):
         """Run quantstats reports for the benchmark.
@@ -222,8 +222,8 @@ class Backtester:
 
         """
         self.benchmark_returns.index = self.benchmark_returns.index.tz_convert(None)
-        qs.reports.html(self.benchmark_returns, output='benchmark-stats-' + time.strftime("%Y%d%m-%H%M%S") + '.html',
-                        title='Benchmark Performance')
+        qs.reports.html(self.benchmark_returns, output=os.path.join("out/benchmark-stats-" + time.strftime(
+            "%Y%d%m-%H%M%S") + os.extsep + ".html"), title='Benchmark Performance')
 
     def run_benchmark(self):
         """Run the benchmark strategy.
@@ -242,7 +242,7 @@ class Backtester:
         self.cerebro_benchmark.addobserver(bt.observers.Broker)
         self.cerebro_benchmark.addobserver(bt.observers.Trades)
         self.cerebro_benchmark.addanalyzer(bt.analyzers.PyFolio, _name='pyfolio')
-        self.cerebro_benchmark.addstrategy(Benchmark, verbose=True, log_file='benchmark_log.csv')
+        self.cerebro_benchmark.addstrategy(Benchmark, verbose=True, log_file='out/benchmark_log.csv')
         # unfortunately the AllInSizer does not work with cheat on close (so need to calculate order size manually)
         # self.cerebro_benchmark.addsizer(bt.sizers.AllInSizer)
         print(f"Running benchmark...")
@@ -270,10 +270,11 @@ class Backtester:
         self.cerebro.addobserver(bt.observers.Broker)
         self.cerebro.addobserver(bt.observers.Trades)
         self.cerebro.addanalyzer(bt.analyzers.PyFolio, _name='pyfolio')
+
         if self.config['global_options']['strategy'] == 'Pump':
-            self.cerebro.addstrategy(PumpStrategy, verbose=True, log_file='strategy_log.csv')
+            self.cerebro.addstrategy(PumpStrategy, verbose=True, log_file='out/strategy_log.csv')
         elif self.config['global_options']['strategy'] == 'Crossover':
-            self.cerebro.addstrategy(CrossoverStrategy, verbose=True, log_file='strategy_log.csv')
+            self.cerebro.addstrategy(CrossoverStrategy, verbose=True, log_file='out/strategy_log.csv')
         elif self.config['global_options']['strategy'] == 'CrossoverPlus':
             if self.config['crossover_plus_strategy_options']['optimise'] == "True":
                 for ii in range(int(self.config['crossover_plus_strategy_options']['sma1_low']),
@@ -296,7 +297,7 @@ class Backtester:
                                                              RSI_crossover_low=kk,
                                                              RSI_crossover_high=ll, RSI_period=mm)
             else:
-                self.cerebro.addstrategy(CrossoverPlusStrategy, verbose=True, log_file='strategy_log.csv')
+                self.cerebro.addstrategy(CrossoverPlusStrategy, verbose=True, log_file='out/strategy_log.csv')
         else:
             raise ValueError(f"Strategy {self.config['global_options']['strategy']} must be Pump or Crossover.")
         self.cerebro.addsizer(CustomSizer, percents=float(self.config['global_options']['position_size']))
@@ -323,12 +324,15 @@ class Backtester:
         ------
 
         """
+        if not os.path.exists('out'):
+            os.makedirs('out')
+
         try:
-            os.remove('benchmark_log.csv')
+            os.remove('out/benchmark_log.csv')
         except OSError:
             pass
         try:
-            os.remove('strategy_log.csv')
+            os.remove('out/strategy_log.csv')
         except OSError:
             pass
 
