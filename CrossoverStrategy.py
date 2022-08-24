@@ -219,26 +219,47 @@ class CrossoverStrategy(bt.Strategy):
         for i, d in enumerate(self.d_with_len):
             dn = d._name
             # self.log(f"{dn} has close: {d.close[0]} and open {d.open[0]}", dt)
+
             # if there are no orders already for this ticker
             if not self.o.get(d, None):
-                # check the signals
+
+                # buy signal
                 if self.inds[d]['cross'] == 1:
-                    if not self.getposition(d).size:
-                        if position_count < self.params.position_limit:
-                            # self.log(f"Buying {dn} with close: {d.close[0]} or open {d.open[0]}", dt)
-                            # self.o[d] = [self.buy(data=d), d.close.get(size=1, ago=-1)[0]]
+                    if position_count <= self.params.position_limit:
+                        # we are short currently
+                        if self.getposition(d).size < 0:
+                            # close short position and open long position
+                            self.o[d] = self.close(data=d, exectype=bt.Order.Market)
+                            self.o[d] = self.buy(data=d, exectype=bt.Order.Market)
+                            self.trade_count = self.trade_count + 2
+                        # we are long currently so no action is required
+                        elif self.getposition(d).size < 0:
+                            self.log(f"Cannot action buy signal for {dn} as I am long already", dt)
+                        # there is no open position
+                        else:
                             self.o[d] = self.buy(data=d, exectype=bt.Order.Market)
                             self.trade_count = self.trade_count + 1
-                        else:
-                            self.log(f"Cannot buy {dn} as I have {position_count} positions already", dt)
                     else:
-                        self.log(f"Cannot buy {dn} as I already long", dt)
+                        self.log(f"Cannot action buy signal for {dn} as I have {position_count} positions already", dt)
+
+                # sell signal
                 elif self.inds[d]['cross'] == -1:
-                    if self.getposition(d).size:
-                        self.o[d] = self.close(data=d, exectype=bt.Order.Market)
-                        self.trade_count = self.trade_count + 1
+                    if position_count <= self.params.position_limit:
+                        # we are short currently so no action is required
+                        if self.getposition(d).size < 0:
+                            self.log(f"Cannot action sell signal for {dn} as I am short already", dt)
+                        # we are long currently
+                        elif self.getposition(d).size > 0:
+                            # close long position and open short position
+                            self.o[d] = self.close(data=d, exectype=bt.Order.Market)
+                            self.o[d] = self.sell(data=d, exectype=bt.Order.Market)
+                            self.trade_count = self.trade_count + 2
+                        # there is no open position
+                        else:
+                            self.o[d] = self.sell(data=d, exectype=bt.Order.Market)
+                            self.trade_count = self.trade_count + 1
                     else:
-                        self.log(f"Cannot sell {dn} as I am not long", dt)
+                        self.log(f"Cannot action sell signal for {dn} as I have {position_count} positions already", dt)
 
     def stop(self):
         """Runs when the strategy stops. Record the final value of the portfolio and calculate the CAGR.
