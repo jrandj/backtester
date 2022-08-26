@@ -15,6 +15,7 @@ from TickerData import TickerData
 from CrossoverStrategy import CrossoverStrategy
 from PumpStrategy import PumpStrategy
 from CrossoverPlusStrategy import CrossoverPlusStrategy
+from CrossoverStrategyLongOnly import CrossoverStrategyLongOnly
 # from PairStrategy import PairStrategy
 from Benchmark import Benchmark
 from CustomCommissionScheme import CustomCommissionScheme
@@ -275,6 +276,8 @@ class Backtester:
             self.cerebro.addstrategy(PumpStrategy, verbose=True, log_file='out/strategy_log.csv')
         elif self.config['global_options']['strategy'] == 'Crossover':
             self.cerebro.addstrategy(CrossoverStrategy, verbose=True, log_file='out/strategy_log.csv')
+        elif self.config['global_options']['strategy'] == 'CrossoverLongOnly':
+            self.cerebro.addstrategy(CrossoverStrategyLongOnly, verbose=True, log_file='out/strategy_log.csv')
         elif self.config['global_options']['strategy'] == 'CrossoverPlus':
             if self.config['crossover_plus_strategy_options']['optimise'] == "True":
                 for ii in range(int(self.config['crossover_plus_strategy_options']['sma1_low']),
@@ -466,8 +469,8 @@ class Backtester:
                 = self.portfolio_stats.get_pf_items()
             if self.config['global_options']['reports'] == 'True':
                 self.run_strategy_reports()
-        # self.portfolio_stats = self.strategy_results[0].analyzers.getbyname('pyfolio')
-        # self.returns, self.positions, self.transactions, self.gross_lev = self.portfolio_stats.get_pf_items()
+        self.portfolio_stats = self.strategy_results[0].analyzers.getbyname('pyfolio')
+        self.returns, self.positions, self.transactions, self.gross_lev = self.portfolio_stats.get_pf_items()
         self.end_value = self.cerebro.broker.getvalue()
 
         # run the benchmark

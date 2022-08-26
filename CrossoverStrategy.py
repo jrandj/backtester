@@ -61,8 +61,8 @@ class CrossoverStrategy(bt.Strategy):
     # parameters for the strategy
     params = (
         ('verbose', True),
-        ('sma1', int(config['crossover_strategy_options']['crossover_sma1'])),
-        ('sma2', int(config['crossover_strategy_options']['crossover_sma2'])),
+        ('sma1', int(config['crossover_strategy_options']['crossover_strategy_sma1'])),
+        ('sma2', int(config['crossover_strategy_options']['crossover_strategy_sma2'])),
         ('position_limit', int(config['global_options']['position_limit'])),
         ('plot_tickers', config['global_options']['plot_tickers']),
         ('log_file', 'CrossoverStrategy.csv')
@@ -233,7 +233,7 @@ class CrossoverStrategy(bt.Strategy):
                             self.o[d] = self.buy(data=d, exectype=bt.Order.Market)
                             self.trade_count = self.trade_count + 2
                         # we are long currently so no action is required
-                        elif self.getposition(d).size < 0:
+                        elif self.getposition(d).size > 0:
                             self.log(f"Cannot action buy signal for {dn} as I am long already", dt)
                         # there is no open position
                         else:
