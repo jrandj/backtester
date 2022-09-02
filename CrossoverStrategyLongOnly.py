@@ -1,7 +1,5 @@
 import configparser
 
-from datetime import datetime
-import pandas as pd
 from pathlib import Path
 import backtrader as bt
 import csv
@@ -38,6 +36,10 @@ class CrossoverStrategyLongOnly(bt.Strategy):
         The starting value of the strategy.
     trade_count : int
         The total number of trades executed by the strategy.
+    ready_to_buy_short : bool
+        A flag used to track when we can open a short position.
+    ready_to_buy_long : bool
+        A flag used to track when we can open a long position.
 
     Methods
     -------
@@ -85,12 +87,6 @@ class CrossoverStrategyLongOnly(bt.Strategy):
         self.o = dict()
         self.inds = dict()
 
-        # filter them out here!
-        # go_long = self.datas0[]
-        # go_short = self.datas1[]
-
-        # add the indicators for each data feed
-        # for i, d in enumerate(self.datas):
         self.inds[0] = dict()
         self.inds[0]['sma1'] = bt.indicators.SimpleMovingAverage(
             self.datas[0].close, period=self.params.sma1)
@@ -101,6 +97,8 @@ class CrossoverStrategyLongOnly(bt.Strategy):
             self.inds[0]['sma1'].plotinfo.subplot = False
             self.inds[0]['sma2'].plotinfo.subplot = False
             self.inds[0]['cross'].plotinfo.subplot = False
+        self.ready_to_buy_short = False
+        self.ready_to_buy_long = False
 
     def log(self, txt, dt=None):
         """The logger for the strategy.
@@ -122,7 +120,8 @@ class CrossoverStrategyLongOnly(bt.Strategy):
             log_writer.writerow([dt.isoformat()] + txt.split('~'))
 
     def notify_order(self, order):
-        """Handle orders and provide a notification from the broker based on the order.
+        """
+        Handle orders and provide a notification from the broker based on the order.
 
         Parameters
         ----------
@@ -161,7 +160,8 @@ class CrossoverStrategyLongOnly(bt.Strategy):
             self.log(f"{dn} order available again as status was {order.getstatusname()}", dt)
 
     def start(self):
-        """Runs at the start. Records starting portfolio value and time.
+        """
+        Runs at the start. Records starting portfolio value and time.
 
         Parameters
         ----------
@@ -173,13 +173,14 @@ class CrossoverStrategyLongOnly(bt.Strategy):
         # as the strategy requires buying and selling across 2 equities we can only use overlapping dates
         self.start_val = self.broker.get_cash()
         self.start_date = max(self.data.num2date(self.datas[0].datetime.array[0]),
-                         self.data.num2date(self.datas[1].datetime.array[0])).date()
+                              self.data.num2date(self.datas[1].datetime.array[0])).date()
         self.end_date = min(self.data.num2date(self.datas[0].datetime.array[-1]),
-                       self.data.num2date(self.datas[1].datetime.array[-1])).date()
+                            self.data.num2date(self.datas[1].datetime.array[-1])).date()
         print(f"Strategy start date: {self.start_date}")
 
     def nextstart(self):
-        """This method runs exactly once to mark the switch between prenext and next.
+        """
+        This method runs exactly once to mark the switch between prenext and next.
 
         Parameters
         ----------
@@ -192,7 +193,8 @@ class CrossoverStrategyLongOnly(bt.Strategy):
         self.next()
 
     def prenext(self):
-        """The method is used when all data points are not available.
+        """
+        The method is used when all data points are not available.
 
         Parameters
         ----------
@@ -205,7 +207,8 @@ class CrossoverStrategyLongOnly(bt.Strategy):
         self.next()
 
     def next(self):
-        """The method is used for all data points once the minimum period of all data/indicators has been met.
+        """
+        The method is used for all data points once the minimum period of all data/indicators has been met.
 
         Parameters
         ----------
@@ -215,77 +218,83 @@ class CrossoverStrategyLongOnly(bt.Strategy):
 
         """
         dt = self.datetime.date()
-
         if self.start_date <= dt <= self.end_date:
-
             position_count = 0
             for position in self.broker.positions:
                 if self.broker.getposition(position).size > 0:
                     position_count = position_count + 1
             cash_percent = 100 * (self.broker.get_cash() / self.broker.get_value())
-            # if self.p.verbose:
-            #     self.log(f"Cash: {self.broker.get_cash():.2f}, "
-            #              f"Equity: {self.broker.get_value() - self.broker.get_cash():.2f} "
-            #              f"Cash %: {cash_percent:.2f}, Positions: {position_count}", dt)
-            for i, d in enumerate(self.d_with_len):
-                # d = self.d_with_len
-                dn = d._name
-                # self.log(f"{dn} has close: {d.close[0]} and open {d.open[0]}", dt)
+            if self.p.verbose:
+                self.log(f"Cash: {self.broker.get_cash():.2f}, "
+                         f"Equity: {self.broker.get_value() - self.broker.get_cash():.2f} "
+                         f"Cash %: {cash_percent:.2f}, Positions: {position_count}", dt)
 
-                # if there are no orders already for this ticker
-                self.log(f"First order {self.o.get(self.d_with_len[0], None)} second order {self.o.get(self.d_with_len[1], None)}", dt)
+            for i, d in enumerate(self.d_with_len):
+                dn = d._name
+
+                # if there are no orders for either ticker
                 if not self.o.get(self.d_with_len[0], None) and not self.o.get(self.d_with_len[1], None):
+
+                    # wait until we have funds
+                    if self.ready_to_buy_long and not self.o.get(self.d_with_len[1], None):
+                        self.o[self.d_with_len[0]] = self.buy(data=self.d_with_len[0], exectype=bt.Order.Market)
+                        self.trade_count = self.trade_count + 1
+                        self.ready_to_buy_long = False
+                        self.log(f"Buying {self.d_with_len[0]._name} after closing short position", dt)
+                    # wait until we have funds
+                    elif self.ready_to_buy_short and not self.o.get(self.d_with_len[0], None):
+                        self.o[self.d_with_len[1]] = self.buy(data=self.d_with_len[1], exectype=bt.Order.Market)
+                        self.trade_count = self.trade_count + 1
+                        self.ready_to_buy_short = False
+                        self.log(f"Buying {self.d_with_len[1]._name} after closing long position", dt)
+
                     # buy signal
                     if self.inds[0]['cross'] == 1:
                         self.log(f"Looking at {d._name} with BUY signal", dt)
-                        # if position_count <= self.params.position_limit:
-                        # we are short currently
+
+                        # we are short currently (we are long on the short instrument)
                         if self.getposition(self.d_with_len[1]).size > 0:
                             # close short position and open long position
-                            self.log(f"Selling {self.d_with_len[1]._name} and Buying {self.d_with_len[0]._name}",
-                                     dt)
+                            self.log(f"Selling {self.d_with_len[1]._name}", dt)
                             self.o[self.d_with_len[1]] = self.close(data=self.d_with_len[1], exectype=bt.Order.Market)
-                            self.o[self.d_with_len[0]] = self.buy(data=self.d_with_len[0], exectype=bt.Order.Market)
-                            self.trade_count = self.trade_count + 2
+                            self.trade_count = self.trade_count + 1
+                            self.ready_to_buy_long = True
+
                         # we are long currently so no action is required
                         elif self.getposition(self.d_with_len[0]).size > 0:
                             self.log(f"Cannot action buy signal for {dn} as I am long already", dt)
+
                         # there is no open position
                         else:
-                            self.log(f"Buying {self.d_with_len[0]._name}", dt)
+                            self.log(f"Buying {self.d_with_len[0]._name} with no previous position", dt)
                             self.o[self.d_with_len[0]] = self.buy(data=self.d_with_len[0], exectype=bt.Order.Market)
                             self.trade_count = self.trade_count + 1
-                        # else:
-                        #     self.log(f"Cannot action buy signal for {dn} as I have {position_count} positions already", dt)
 
                     # sell signal
                     elif self.inds[0]['cross'] == -1:
                         self.log(f"Looking at {d._name} with SELL signal", dt)
-                        # if position_count <= self.params.position_limit:
+
                         # we are short currently so no action is required
                         if self.getposition(self.d_with_len[1]).size > 0:
                             self.log(f"Cannot action sell signal for {dn} as I am short already", dt)
+
                         # we are long currently
                         elif self.getposition(self.d_with_len[0]).size > 0:
                             # close long position and open short position
-                            self.log(f"Selling {self.d_with_len[0]._name} and Buying {self.d_with_len[1]._name}",
-                                     dt)
+                            self.log(f"Selling {self.d_with_len[0]._name}", dt)
                             self.o[self.d_with_len[0]] = self.close(data=self.d_with_len[0], exectype=bt.Order.Market)
-                            self.o[self.d_with_len[1]] = self.buy(data=self.d_with_len[1], exectype=bt.Order.Market)
-                            self.trade_count = self.trade_count + 2
+                            self.trade_count = self.trade_count + 1
+                            self.ready_to_buy_short = True
+
                         # there is no open position
                         else:
-                            self.log(f"Buying {self.d_with_len[1]._name}", dt)
+                            self.log(f"Buying {self.d_with_len[1]._name} with no previous position", dt)
                             self.o[self.d_with_len[1]] = self.buy(data=self.d_with_len[1], exectype=bt.Order.Market)
                             self.trade_count = self.trade_count + 1
-                        # else:
-                        #     self.log(f"Cannot action sell signal for {dn} as I have {position_count} positions already", dt)
-                else:
-                    self.log(f"Unable to action due to {self.o.get(self.d_with_len[0], None)} and "
-                             f"{self.o.get(self.d_with_len[1], None)}", dt)
 
     def stop(self):
-        """Runs when the strategy stops. Record the final value of the portfolio and calculate the CAGR.
+        """
+        Runs when the strategy stops. Record the final value of the portfolio and calculate the CAGR.
 
         Parameters
         ----------
@@ -309,7 +318,8 @@ class CrossoverStrategyLongOnly(bt.Strategy):
         print(f"Crossover strategy portfolio value: {self.end_val}")
 
     def notify_trade(self, trade):
-        """Handle trades and provide a notification from the broker based on the trade.
+        """
+        Handle trades and provide a notification from the broker based on the trade.
 
         Parameters
         ----------
