@@ -167,9 +167,9 @@ class Backtester:
                 ticker_data = self.data.loc[self.data['Ticker'] == ticker]
                 if self.config['global_options']['vectorised'] == 'True':
                     if self.config['global_options']['strategy'] == 'Crossover':
-                        limit = int(self.config['crossover_strategy_options']['crossover_sma2'])
+                        limit = int(self.config['crossover_strategy_options']['crossover_strategy_sma1'])
                     elif self.config['global_options']['strategy'] == 'CrossoverPlus':
-                        limit = int(self.config['crossover_plus_strategy_options']['crossover_plus_sma2'])
+                        limit = int(self.config['crossover_plus_strategy_options']['crossover_plus_strategy_sma2'])
                     elif self.config['global_options']['strategy'] == 'Pump':
                         limit = max(int(self.config['pump_strategy_options']['price_average_period']),
                                     int(self.config['pump_strategy_options']['volume_average_period']))

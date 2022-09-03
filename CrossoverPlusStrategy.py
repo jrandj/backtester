@@ -61,8 +61,8 @@ class CrossoverPlusStrategy(bt.Strategy):
     # parameters for the strategy
     params = (
         ('verbose', True),
-        ('sma1', int(config['crossover_plus_strategy_options']['crossover_plus_sma1'])),
-        ('sma2', int(config['crossover_plus_strategy_options']['crossover_plus_sma2'])),
+        ('sma1', int(config['crossover_plus_strategy_options']['crossover_plus_strategy_sma1'])),
+        ('sma2', int(config['crossover_plus_strategy_options']['crossover_plus_strategy_sma2'])),
         ('RSI_period', int(config['crossover_plus_strategy_options']['RSI_period'])),
         ('RSI_crossover_low', int(config['crossover_plus_strategy_options']['RSI_crossover_low'])),
         ('RSI_crossover_high', int(config['crossover_plus_strategy_options']['RSI_crossover_high'])),
