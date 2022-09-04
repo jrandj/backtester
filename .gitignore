@@ -1,6 +1,11 @@
+# Ignore
 *.xlsx
 *.csv
 *.html
 *.h5
 __pycache__/
 .idea/
+
+# Allow
+!/data/*.csv
+data/data.csv
