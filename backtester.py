@@ -16,6 +16,7 @@ from CrossoverStrategy import CrossoverStrategy
 from PumpStrategy import PumpStrategy
 from CrossoverPlusStrategy import CrossoverPlusStrategy
 from CrossoverStrategyLongOnly import CrossoverStrategyLongOnly
+from HolyGrail import HolyGrail
 # from PairStrategy import PairStrategy
 from Benchmark import Benchmark
 from CustomCommissionScheme import CustomCommissionScheme
@@ -274,6 +275,8 @@ class Backtester:
 
         if self.config['global_options']['strategy'] == 'Pump':
             self.cerebro.addstrategy(PumpStrategy, verbose=True, log_file='out/strategy_log.csv')
+        if self.config['global_options']['strategy'] == 'HolyGrail':
+            self.cerebro.addstrategy(HolyGrail, verbose=True, log_file='out/strategy_log.csv')
         elif self.config['global_options']['strategy'] == 'Crossover':
             self.cerebro.addstrategy(CrossoverStrategy, verbose=True, log_file='out/strategy_log.csv')
         elif self.config['global_options']['strategy'] == 'CrossoverLongOnly':
