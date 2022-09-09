@@ -266,6 +266,10 @@ class Backtester:
         """
         self.cerebro.broker.addcommissioninfo(self.comminfo)
         self.cerebro.broker.setcash(float(self.config['broker']['cash']))
+        # If True then cash will be increased when a stocklike asset is shorted and the calculated value for the asset
+        # will be negative. If False then the cash will be deducted as operation cost and the calculated value will be
+        # positive to end up with the same amount
+        self.cerebro.broker.set_shortcash(False)
         # this needs to be aware of the ranges
         self.add_strategy_data()
         self.cerebro.addobservermulti(bt.observers.BuySell, barplot=True, bardist=0.0025)
