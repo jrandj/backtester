@@ -70,8 +70,6 @@ class HolyGrail(bt.Strategy):
     # parameters for the strategy
     params = (
         ('verbose', True),
-        ('sma1', int(config['crossover_strategy_long_only_options']['crossover_strategy_long_only_sma1'])),
-        ('sma2', int(config['crossover_strategy_long_only_options']['crossover_strategy_long_only_sma2'])),
         ('position_limit', int(config['global_options']['position_limit'])),
         ('plot_tickers', config['global_options']['plot_tickers']),
         ('log_file', 'HolyGrail.csv')
@@ -90,34 +88,44 @@ class HolyGrail(bt.Strategy):
         self.trade_count = 0
         self.o = dict()
         self.inds = dict()
-
-        for i, d in enumerate(self.datas):
-            self.inds[d] = dict()
-            self.inds[d]['adx'] = bt.indicators.AverageDirectionalMovementIndex(d).lines.adx
-            self.inds[d]['ema'] = bt.indicators.ExponentialMovingAverage(d.close, period=20)
-            self.inds[d]['ema_slope'] = self.inds[d]['ema'] - self.inds[d]['ema'](-1)
-            self.inds[d]['local_max'] = bt.indicators.Highest(d.high, period=20)
-            self.inds[d]['local_min'] = bt.indicators.Lowest(d.low, period=20)
-
-            if self.params.plot_tickers == "False":
-                self.inds[d]['adx'].plotinfo.subplot = False
-                self.inds[d]['ema'].plotinfo.subplot = False
-                self.inds[d]['ema_slope'].plotinfo.subplot = False
-                self.inds[d]['local_max'].plotinfo.subplot = False
-                self.inds[d]['local_min'].plotinfo.subplot = False
-
-        self.entry_point_long = None
-        self.stop_loss_long = None
-        self.entry_point_short = None
-        self.stop_loss_short = None
-        self.trailing_stop = None
-        self.local_max = None
-        self.local_min = None
+        self.entry_point_long = dict()
+        self.stop_loss_long = dict()
+        self.entry_point_short = dict()
+        self.stop_loss_short = dict()
+        self.trailing_stop = dict()
+        self.local_max = dict()
+        self.local_min = dict()
         self.short_days = 0
         self.long_days = 0
 
+        for i, d in enumerate(self.datas):
+            self.inds[d] = dict()
+            self.inds[d]['adx'] = bt.indicators.AverageDirectionalMovementIndex(d)
+            self.inds[d]['ema_slow'] = bt.indicators.ExponentialMovingAverage(d.close, period=20)
+            self.inds[d]['ema_fast'] = bt.indicators.ExponentialMovingAverage(d.close, period=5)
+            self.inds[d]['ema_slow_slope'] = self.inds[d]['ema_slow'] - self.inds[d]['ema_slow'](-1)
+            self.inds[d]['ema_fast_slope'] = self.inds[d]['ema_fast'] - self.inds[d]['ema_fast'](-1)
+            self.inds[d]['local_max'] = bt.indicators.Highest(d.high, period=20)
+            self.inds[d]['local_min'] = bt.indicators.Lowest(d.low, period=20)
+
+            self.entry_point_long[d] = None
+            self.stop_loss_long[d] = None
+            self.entry_point_short[d] = None
+            self.stop_loss_short[d] = None
+            self.trailing_stop[d] = None
+            self.local_max[d] = None
+            self.local_min[d] = None
+
+            if self.params.plot_tickers == "False":
+                self.inds[d]['adx'].plotinfo.subplot = False
+                self.inds[d]['ema_slow'].plotinfo.subplot = False
+                self.inds[d]['ema_fast'].plotinfo.subplot = False
+                self.inds[d]['local_max'].plotinfo.subplot = False
+                self.inds[d]['local_min'].plotinfo.subplot = False
+
     def log(self, txt, dt=None):
-        """The logger for the strategy.
+        """
+        The logger for the strategy.
 
         Parameters
         ----------
@@ -186,11 +194,10 @@ class HolyGrail(bt.Strategy):
         ------
 
         """
-        # as the strategy requires buying and selling across 2 equities we can only use overlapping dates
         self.start_val = self.broker.get_cash()
-
         start_date = self.data.num2date(self.datas[0].datetime.array[0])
         end_date = self.data.num2date(self.datas[0].datetime.array[-1])
+
         for d in self.datas:
             start_date = max(start_date, self.data.num2date(d.datetime.array[0]))
             end_date = min(end_date, self.data.num2date(d.datetime.array[-1]))
@@ -239,130 +246,132 @@ class HolyGrail(bt.Strategy):
 
         """
         dt = self.datetime.date()
-        if self.start_date <= dt <= self.end_date:
-            position_count = 0
-            for position in self.broker.positions:
-                if self.broker.getposition(position).size > 0:
-                    position_count = position_count + 1
-            cash_percent = 100 * (self.broker.get_cash() / self.broker.get_value())
-            if self.p.verbose:
-                self.log(f"Cash: {self.broker.get_cash():.2f}, "
-                         f"Equity: {self.broker.get_value() - self.broker.get_cash():.2f} "
-                         f"Cash %: {cash_percent:.2f}, Positions: {position_count}", dt)
 
-            for i, d in enumerate(self.d_with_len):
-                dn = d._name
+        position_count = 0
+        for position in self.broker.positions:
+            if self.broker.getposition(position).size > 0:
+                position_count = position_count + 1
+        cash_percent = 100 * (self.broker.get_cash() / self.broker.get_value())
+        # if self.p.verbose:
+        #     self.log(f"Cash: {self.broker.get_cash():.2f}, "
+        #              f"Equity: {self.broker.get_value() - self.broker.get_cash():.2f} "
+        #              f"Cash %: {cash_percent:.2f}, Positions: {position_count}", dt)
 
-                # track if we are long or short
-                if self.getposition(d).size > 0:
-                    self.long_days = self.long_days + 1
-                elif self.getposition(d).size < 0:
-                    self.short_days = self.short_days + 1
+        for i, d in enumerate(self.d_with_len):
+            dn = d._name
 
-                # if there are no orders already
-                if not self.o.get(d, None):
-                    # if we are long consider setting the trailing stop from a recent (20 day) local maximum
-                    if self.getposition(d).size > 0 and not self.trailing_stop and d.close[0] > self.local_max:
-                        self.trailing_stop = d.close[0]
-                        self.log(f"Long in {dn} and setting a trailing stop of {self.trailing_stop}", dt)
+            # track if we are long or short
+            if self.getposition(d).size > 0:
+                self.long_days = self.long_days + 1
+            elif self.getposition(d).size < 0:
+                self.short_days = self.short_days + 1
 
-                    # if we are short consider setting the trailing stop from a recent (20 day) local minimum
-                    elif self.getposition(d).size < 0 and not self.trailing_stop and d.close[0] < self.local_min:
-                        self.trailing_stop = d.close[0]
-                        self.log(f"Short in {dn} and setting a trailing stop of {self.trailing_stop}", dt)
+            # if there are no orders already
+            if not self.o.get(d, None):
+                # if we are long consider setting the trailing stop from a recent (20 day) local maximum
+                if self.getposition(d).size > 0 and not self.trailing_stop[d] and d.close[0] > self.local_max[d]:
+                    self.trailing_stop[d] = d.close[0]
+                    self.log(f"Long in {dn} and setting a trailing stop of {self.trailing_stop[d]}", dt)
 
-                    # handle closing if we have a short position already
-                    if self.getposition(d).size < 0:
-                        # we have closed above our stop loss
-                        if self.stop_loss_short is not None and d.close[0] > self.stop_loss_short:
-                            self.o[d] = self.close(data=d, exectype=bt.Order.Market)
+                # if we are short consider setting the trailing stop from a recent (20 day) local minimum
+                elif self.getposition(d).size < 0 and not self.trailing_stop[d] and d.close[0] < self.local_min[d]:
+                    self.trailing_stop[d] = d.close[0]
+                    self.log(f"Short in {dn} and setting a trailing stop of {self.trailing_stop[d]}", dt)
+
+                # handle closing if we have a short position already
+                if self.getposition(d).size < 0:
+                    # we have closed above our stop loss
+                    if self.stop_loss_short[d] is not None and d.close[0] > self.stop_loss_short[d]:
+                        self.o[d] = self.close(data=d, exectype=bt.Order.Market)
+                        self.trade_count = self.trade_count + 1
+                        self.log(f"Closing short position as price {d.close[0]} is above our stop "
+                                 f"loss of {self.stop_loss_short[d]}", dt)
+                        self.local_min[d] = None
+                        self.stop_loss_short[d] = None
+
+                    # we have exceeded our trailing stop threshold and the close has dropped below the EMA
+                    elif self.trailing_stop[d] is not None and self.trailing_stop[d] < d.close[0] < self.inds[d][
+                        'ema_slow'][0]:
+                        self.o[d] = self.close(data=d, exectype=bt.Order.Market)
+                        self.trade_count = self.trade_count + 1
+                        self.log(f"Closing short position as price {d.close[0]} is below our trailing stop of"
+                                 f" {self.trailing_stop[d]} "
+                                 f"and dropped below the EMA of {self.inds[d]['ema_slow'][0]}", dt)
+                        self.local_min[d] = None
+                        self.trailing_stop[d] = None
+
+                # handle closing if we have a long position already
+                elif self.getposition(d).size > 0:
+                    # we have closed below our stop loss
+                    if self.stop_loss_long[d] is not None and d.close[0] < self.stop_loss_long[d]:
+                        self.o[d] = self.close(data=d, exectype=bt.Order.Market)
+                        self.trade_count = self.trade_count + 1
+                        self.log(f"Closing long position as price {d.close[0]} is below our stop "
+                                 f"loss of {self.stop_loss_long[d]}", dt)
+                        self.local_max[d] = None
+                        self.stop_loss_long[d] = None
+
+                    # we have exceeded our trailing stop threshold and the close has dropped below the EMA
+                    elif self.trailing_stop[d] is not None and self.trailing_stop[d] < d.close[0] < self.inds[d][
+                        'ema_slow'][
+                        0]:
+                        self.o[d] = self.close(data=d, exectype=bt.Order.Market)
+                        self.trade_count = self.trade_count + 1
+                        self.log(f"Closing long position as price {d.close[0]} exceeds our trailing stop of"
+                                 f" {self.trailing_stop[d]} and dropped below the EMA of {self.inds[d]['ema_slow'][0]}",
+                                 dt)
+                        self.local_min[d] = None
+                        self.trailing_stop[d] = None
+
+                # handle buy/sell
+                elif self.getposition(d).size == 0:
+                    # kill the tags if adx is below 30
+                    if self.inds[d]['adx'].lines.adx[0] <= 30:
+                        if self.entry_point_long[d]:
+                            self.entry_point_long[d] = None
+                        if self.entry_point_short[d]:
+                            self.entry_point_short[d] = None
+
+                    # adx is above 30
+                    else:
+                        # the ema is touched from below, so we set an entry point for going short
+                        if d.close[0] < self.inds[d]['ema_slow'][0] < d.high[0]:
+                            self.stop_loss_short[d] = d.high[0]
+                            self.entry_point_short[d] = d.low[0]
+                            self.log(f"Considering going short for {dn} as the EMA has been touched from below, "
+                                     f"setting stop loss at {self.stop_loss_short[d]} (low) and an entry point of "
+                                     f"{self.entry_point_short[d]} (high)", dt)
+
+                        # the ema is touched from above, so we set an entry point for going long
+                        if self.inds[d]['ema_slow_slope'][0] > 0 and self.inds[d]['ema_fast_slope'][0] < 0 \
+                                and d.low[0] < self.inds[d]['ema_slow'][0] < d.close[0]:
+                            self.stop_loss_long[d] = d.low[0]
+                            self.entry_point_long[d] = d.high[0]
+                            self.log(f"Considering going long for {dn} as the EMA has been touched from above, "
+                                     f"setting stop loss at {self.stop_loss_long[d]} (low) and an entry point of "
+                                     f"{self.entry_point_long[d]} (high)", dt)
+
+                        # sell as we have gone below the entry point and remain below the EMA
+                        if d.close[0] < self.inds[d]['ema_slow'][0] and self.entry_point_short[d] \
+                                is not None and d.close[0] < self.entry_point_short[d]:
+                            self.o[d] = self.sell(data=d, exectype=bt.Order.Market)
                             self.trade_count = self.trade_count + 1
-                            self.log(f"Closing short position as price {d.close[0]} is above our stop "
-                                     f"loss of {self.stop_loss_short}", dt)
-                            self.local_min = None
-                            self.stop_loss_short = None
+                            self.local_min[d] = self.inds[d]['local_min'][0]
+                            self.log(
+                                f"For {dn} selling as close {d.close[0]} has dropped below the entry point of"
+                                f" {self.entry_point_short[d]}, setting local min of {self.local_min[d]}", dt)
+                            self.entry_point_short[d] = None
 
-                        # we have exceeded our trailing stop threshold and the close has dropped below the EMA
-                        elif self.trailing_stop is not None and self.trailing_stop < d.close[0] < self.inds[d]['ema'][
-                            0]:
-                            self.o[d] = self.close(data=d, exectype=bt.Order.Market)
+                        # buy as we have gone above the entry point and remain above the EMA
+                        if d.close[0] > self.inds[d]['ema_slow'][0] and self.entry_point_long[d] \
+                                is not None and d.close[0] > self.entry_point_long[d]:
+                            self.o[d] = self.buy(data=d, exectype=bt.Order.Market)
                             self.trade_count = self.trade_count + 1
-                            self.log(f"Closing short position as price {d.close[0]} is below our trailing stop of"
-                                     f" {self.trailing_stop} "
-                                     f"and dropped below the EMA of {self.inds[d]['ema'][0]}", dt)
-                            self.local_min = None
-                            self.trailing_stop = None
-
-                    # handle closing if we have a long position already
-                    elif self.getposition(d).size > 0:
-                        # we have closed below our stop loss
-                        if self.stop_loss_long is not None and d.close[0] < self.stop_loss_long:
-                            self.o[d] = self.close(data=d, exectype=bt.Order.Market)
-                            self.trade_count = self.trade_count + 1
-                            self.log(f"Closing long position as price {d.close[0]} is below our stop "
-                                     f"loss of {self.stop_loss_long}", dt)
-                            self.local_max = None
-                            self.stop_loss_long = None
-
-                        # we have exceeded our trailing stop threshold and the close has dropped below the EMA
-                        elif self.trailing_stop is not None and self.trailing_stop < d.close[0] < self.inds[d]['ema'][
-                            0]:
-                            self.o[d] = self.close(data=d, exectype=bt.Order.Market)
-                            self.trade_count = self.trade_count + 1
-                            self.log(f"Closing long position as price {d.close[0]} exceeds our trailing stop of"
-                                     f" {self.trailing_stop} and dropped below the EMA of {self.inds[d]['ema'][0]}", dt)
-                            self.local_min = None
-                            self.trailing_stop = None
-
-                    # handle buy/sell
-                    elif self.getposition(d).size == 0:
-
-                        # kill the tags if adx is below 30
-                        if self.inds[d]['adx'][0] <= 30:
-                            if self.entry_point_long:
-                                self.entry_point_long = None
-                            if self.entry_point_short:
-                                self.entry_point_short = None
-
-                        # adx is above 30
-                        else:
-                            # the ema is touched from below, so we set an entry point for going short
-                            if d.close[0] < self.inds[d]['ema'][0] < d.high[0]:
-                                self.stop_loss_short = d.high[0]
-                                self.entry_point_short = d.low[0]
-                                self.log(f"Considering going short for {dn} as the EMA has been touched from below, "
-                                         f"setting stop loss at {self.stop_loss_short} (low) and an entry point of "
-                                         f"{self.entry_point_short} (high)", dt)
-
-                            # the ema is touched from above, so we set an entry point for going long
-                            if d.low[0] < self.inds[d]['ema'][0] < d.close[0]:
-                                self.stop_loss_long = d.low[0]
-                                self.entry_point_long = d.high[0]
-                                self.log(f"Considering going long for {dn} as the EMA has been touched from above, "
-                                         f"setting stop loss at {self.stop_loss_long} (low) and an entry point of "
-                                         f"{self.entry_point_long} (high)", dt)
-
-                            # sell as we have gone below the entry point and remain below the EMA
-                            if d.close[0] < self.inds[d]['ema'][0] and self.entry_point_short \
-                                    is not None and d.close[0] < self.entry_point_short:
-                                self.o[d] = self.sell(data=d, exectype=bt.Order.Market)
-                                self.trade_count = self.trade_count + 1
-                                self.local_min = self.inds[d]['local_min'][0]
-                                self.log(
-                                    f"For {dn} selling as close {d.close[0]} has dropped below the entry point of"
-                                    f" {self.entry_point_short}, setting local min of {self.local_min}", dt)
-                                self.entry_point_short = None
-
-                            # buy as we have gone above the entry point and remain above the EMA
-                            if d.close[0] > self.inds[d]['ema'][0] and self.entry_point_long \
-                                    is not None and d.close[0] > self.entry_point_long:
-                                self.o[d] = self.buy(data=d, exectype=bt.Order.Market)
-                                self.trade_count = self.trade_count + 1
-                                self.local_max = self.inds[d]['local_max'][0]
-                                self.log(
-                                    f"For {dn} buying as close {d.close[0]} has exceeded the entry point of"
-                                    f" {self.entry_point_long}, setting local max of {self.local_max}", dt)
-                                self.entry_point_long = None
+                            self.local_max[d] = self.inds[d]['local_max'][0]
+                            self.log(
+                                f"For {dn} buying as close {d.close[0]} has exceeded the entry point of"
+                                f" {self.entry_point_long[d]}, setting local max of {self.local_max[d]}", dt)
+                            self.entry_point_long[d] = None
 
     def stop(self):
         """
@@ -375,15 +384,14 @@ class HolyGrail(bt.Strategy):
         ------
 
         """
-        print(f"HolyGrail end date: {self.end_date}")
         self.elapsed_days = (self.end_date - self.start_date).days
         self.end_val = self.broker.get_value()
         self.cagr = 100 * ((self.end_val / self.start_val) ** (
                 1 / (self.elapsed_days / 365.25)) - 1)
         print(f"HolyGrail CAGR: {self.cagr:.4f}% (over {(self.elapsed_days / 365.25):.2f} years "
-              f"with {self.trade_count} trades). Long {round((self.long_days/self.elapsed_days)*100, 2)}% and short "
-              f"{round((self.short_days/self.elapsed_days)*100, 2)}%, for a total of "
-              f"{round(((self.long_days+self.short_days)/self.elapsed_days)*100, 2)}%.")
+              f"with {self.trade_count} trades). Long {round((self.long_days / self.elapsed_days) * 100, 2)}% and short "
+              f"{round((self.short_days / self.elapsed_days) * 100, 2)}%, for a total of "
+              f"{round(((self.long_days + self.short_days) / self.elapsed_days) * 100, 2)}%.")
         print(f"HolyGrail portfolio value: {self.end_val}")
 
     def notify_trade(self, trade):
