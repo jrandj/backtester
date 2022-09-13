@@ -3,6 +3,7 @@
 *.csv
 *.html
 *.h5
+*.txt
 __pycache__/
 .idea/
 
