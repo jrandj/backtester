@@ -70,13 +70,17 @@ class HolyGrail(bt.Strategy):
     # parameters for the strategy
     params = (
         ('verbose', True),
+        ('adx_period', int(config['holygrail_strategy_options']['adx_period'])),
+        ('ema_slow_period', int(config['holygrail_strategy_options']['ema_slow_period'])),
+        ('ema_fast_period', int(config['holygrail_strategy_options']['ema_fast_period'])),
         ('position_limit', int(config['global_options']['position_limit'])),
         ('plot_tickers', config['global_options']['plot_tickers']),
         ('log_file', 'HolyGrail.csv')
     )
 
     def __init__(self):
-        """Create any indicators needed for the strategy.
+        """
+        Create any indicators needed for the strategy.
 
         Parameters
         ----------
@@ -95,18 +99,20 @@ class HolyGrail(bt.Strategy):
         self.trailing_stop = dict()
         self.local_max = dict()
         self.local_min = dict()
-        self.short_days = 0
-        self.long_days = 0
+        self.short_days = dict()
+        self.long_days = dict()
 
         for i, d in enumerate(self.datas):
             self.inds[d] = dict()
-            self.inds[d]['adx'] = bt.indicators.AverageDirectionalMovementIndex(d)
-            self.inds[d]['ema_slow'] = bt.indicators.ExponentialMovingAverage(d.close, period=20)
-            self.inds[d]['ema_fast'] = bt.indicators.ExponentialMovingAverage(d.close, period=5)
+            self.inds[d]['adx'] = bt.indicators.AverageDirectionalMovementIndex(d, period=self.params.adx_period)
+            self.inds[d]['ema_slow'] = bt.indicators.ExponentialMovingAverage(d.close,
+                                                                              period=self.params.ema_slow_period)
+            self.inds[d]['ema_fast'] = bt.indicators.ExponentialMovingAverage(d.close,
+                                                                              period=self.params.ema_fast_period)
             self.inds[d]['ema_slow_slope'] = self.inds[d]['ema_slow'] - self.inds[d]['ema_slow'](-1)
             self.inds[d]['ema_fast_slope'] = self.inds[d]['ema_fast'] - self.inds[d]['ema_fast'](-1)
-            self.inds[d]['local_max'] = bt.indicators.Highest(d.high, period=20)
-            self.inds[d]['local_min'] = bt.indicators.Lowest(d.low, period=20)
+            self.inds[d]['local_max'] = bt.indicators.Highest(d.high, period=self.params.adx_period)
+            self.inds[d]['local_min'] = bt.indicators.Lowest(d.low, period=self.params.adx_period)
 
             self.entry_point_long[d] = None
             self.stop_loss_long[d] = None
@@ -199,8 +205,8 @@ class HolyGrail(bt.Strategy):
         end_date = self.data.num2date(self.datas[0].datetime.array[-1])
 
         for d in self.datas:
-            start_date = max(start_date, self.data.num2date(d.datetime.array[0]))
-            end_date = min(end_date, self.data.num2date(d.datetime.array[-1]))
+            start_date = min(start_date, self.data.num2date(d.datetime.array[0]))
+            end_date = max(end_date, self.data.num2date(d.datetime.array[-1]))
 
         self.start_date = start_date.date()
         self.end_date = end_date.date()
@@ -231,7 +237,7 @@ class HolyGrail(bt.Strategy):
         ------
 
         """
-        self.d_with_len = [d for d in self.datas if len(d.array) > 0]
+        self.d_with_len = [d for d in self.datas if len(d)]
         self.next()
 
     def next(self):
@@ -262,19 +268,21 @@ class HolyGrail(bt.Strategy):
 
             # track if we are long or short
             if self.getposition(d).size > 0:
-                self.long_days = self.long_days + 1
+                self.long_days[d] = self.long_days.get(d, 0) + 1
             elif self.getposition(d).size < 0:
-                self.short_days = self.short_days + 1
+                self.short_days[d] = self.short_days.get(d, 0) + 1
 
             # if there are no orders already
             if not self.o.get(d, None):
                 # if we are long consider setting the trailing stop from a recent (20 day) local maximum
-                if self.getposition(d).size > 0 and not self.trailing_stop[d] and d.close[0] > self.local_max[d]:
+                if self.getposition(d).size > 0 and not self.trailing_stop[d] and self.local_max[d] is not None and \
+                        d.close[0] > self.local_max[d]:
                     self.trailing_stop[d] = d.close[0]
                     self.log(f"Long in {dn} and setting a trailing stop of {self.trailing_stop[d]}", dt)
 
                 # if we are short consider setting the trailing stop from a recent (20 day) local minimum
-                elif self.getposition(d).size < 0 and not self.trailing_stop[d] and d.close[0] < self.local_min[d]:
+                elif self.getposition(d).size < 0 and not self.trailing_stop[d] and self.local_min[d] is not None and \
+                        d.close[0] < self.local_min[d]:
                     self.trailing_stop[d] = d.close[0]
                     self.log(f"Short in {dn} and setting a trailing stop of {self.trailing_stop[d]}", dt)
 
@@ -312,9 +320,8 @@ class HolyGrail(bt.Strategy):
                         self.stop_loss_long[d] = None
 
                     # we have exceeded our trailing stop threshold and the close has dropped below the EMA
-                    elif self.trailing_stop[d] is not None and self.trailing_stop[d] < d.close[0] < self.inds[d][
-                        'ema_slow'][
-                        0]:
+                    elif self.trailing_stop[d] is not None and self.trailing_stop[d] < \
+                            d.close[0] < self.inds[d]['ema_slow'][0]:
                         self.o[d] = self.close(data=d, exectype=bt.Order.Market)
                         self.trade_count = self.trade_count + 1
                         self.log(f"Closing long position as price {d.close[0]} exceeds our trailing stop of"
@@ -335,21 +342,27 @@ class HolyGrail(bt.Strategy):
                     # adx is above 30
                     else:
                         # the ema is touched from below, so we set an entry point for going short
-                        if d.close[0] < self.inds[d]['ema_slow'][0] < d.high[0]:
+                        # COMPARE % difference of wick to MAX/MIN (e.g. for long if 10%+ or below we'll consider it
+                        # eligible to be a retracement
+                        if abs(d.close[0] / self.inds[d]['local_min']) > 1.05 and d.close[0] < \
+                                self.inds[d]['ema_slow'][0] < d.high[0]:
                             self.stop_loss_short[d] = d.high[0]
                             self.entry_point_short[d] = d.low[0]
                             self.log(f"Considering going short for {dn} as the EMA has been touched from below, "
-                                     f"setting stop loss at {self.stop_loss_short[d]} (low) and an entry point of "
+                                     f"and the close is "
+                                     f"{100 * (round(d.close[0] / self.inds[d]['local_min'], 3))}% of the local "
+                                     f"max. Setting stop loss at {self.stop_loss_short[d]} (low) and an entry point of "
                                      f"{self.entry_point_short[d]} (high)", dt)
 
                         # the ema is touched from above, so we set an entry point for going long
-                        if self.inds[d]['ema_slow_slope'][0] > 0 and self.inds[d]['ema_fast_slope'][0] < 0 \
-                                and d.low[0] < self.inds[d]['ema_slow'][0] < d.close[0]:
+                        if abs(d.close[0] / self.inds[d]['local_max']) < 0.95 and d.low[0] \
+                                < self.inds[d]['ema_slow'][0] < d.close[0]:
                             self.stop_loss_long[d] = d.low[0]
                             self.entry_point_long[d] = d.high[0]
-                            self.log(f"Considering going long for {dn} as the EMA has been touched from above, "
-                                     f"setting stop loss at {self.stop_loss_long[d]} (low) and an entry point of "
-                                     f"{self.entry_point_long[d]} (high)", dt)
+                            self.log(f"Considering going long for {dn} as the EMA has been touched from above, and the "
+                                     f"close is {100 * (round(d.close[0] / self.inds[d]['local_max'], 3))}% of the "
+                                     f"local min. Setting stop loss at {self.stop_loss_long[d]} (low) and an entry "
+                                     f"point of {self.entry_point_long[d]} (high)", dt)
 
                         # sell as we have gone below the entry point and remain below the EMA
                         if d.close[0] < self.inds[d]['ema_slow'][0] and self.entry_point_short[d] \
@@ -388,10 +401,14 @@ class HolyGrail(bt.Strategy):
         self.end_val = self.broker.get_value()
         self.cagr = 100 * ((self.end_val / self.start_val) ** (
                 1 / (self.elapsed_days / 365.25)) - 1)
+        all_long_days = sum(self.long_days.values())
+        all_short_days = sum(self.short_days.values())
+
         print(f"HolyGrail CAGR: {self.cagr:.4f}% (over {(self.elapsed_days / 365.25):.2f} years "
-              f"with {self.trade_count} trades). Long {round((self.long_days / self.elapsed_days) * 100, 2)}% and short "
-              f"{round((self.short_days / self.elapsed_days) * 100, 2)}%, for a total of "
-              f"{round(((self.long_days + self.short_days) / self.elapsed_days) * 100, 2)}%.")
+              f"with {self.trade_count} trades). Long "
+              f"{round((all_long_days / (self.elapsed_days * len(self.d_with_len))) * 100, 2)}% and short "
+              f"{round((all_short_days / (self.elapsed_days * len(self.d_with_len))) * 100, 2)}%, for a total "
+              f"of {round(((all_long_days + all_short_days) / self.elapsed_days) * 100, 2)}%.")
         print(f"HolyGrail portfolio value: {self.end_val}")
 
     def notify_trade(self, trade):

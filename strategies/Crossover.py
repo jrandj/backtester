@@ -3,10 +3,9 @@ import configparser
 from pathlib import Path
 import backtrader as bt
 import csv
-from collections import defaultdict
 
 
-class PumpStrategy(bt.Strategy):
+class Crossover(bt.Strategy):
     """
     A class that contains the trading strategy.
 
@@ -30,8 +29,6 @@ class PumpStrategy(bt.Strategy):
         The orders for all tickers.
     params : tuple
         Parameters for the strategy.
-    position_dt : dict
-        Start and end dates from a previous position. Required as the backtrader position object does not support this.
     start_date : datetime.date
         The starting date of the strategy.
     start_val : float
@@ -64,17 +61,11 @@ class PumpStrategy(bt.Strategy):
     # parameters for the strategy
     params = (
         ('verbose', True),
-        ('volume_average_period', int(config['pump_strategy_options']['volume_average_period'])),
-        ('price_average_period', int(config['pump_strategy_options']['price_average_period'])),
-        ('sell_timeout', int(config['pump_strategy_options']['sell_timeout'])),
-        ('buy_timeout', int(config['pump_strategy_options']['buy_timeout'])),
-        ('volume_factor', float(config['pump_strategy_options']['volume_factor'])),
-        ('price_comparison_lower_bound', float(config['pump_strategy_options']['price_comparison_lower_bound'])),
-        ('price_comparison_upper_bound', float(config['pump_strategy_options']['price_comparison_upper_bound'])),
+        ('sma1', int(config['crossover_strategy_options']['crossover_strategy_sma1'])),
+        ('sma2', int(config['crossover_strategy_options']['crossover_strategy_sma2'])),
         ('position_limit', int(config['global_options']['position_limit'])),
-        ('profit_factor', float(config['pump_strategy_options']['profit_factor'])),
         ('plot_tickers', config['global_options']['plot_tickers']),
-        ('log_file', 'PumpStrategy.csv')
+        ('log_file', 'CrossoverStrategy.csv')
     )
 
     def __init__(self):
@@ -88,17 +79,20 @@ class PumpStrategy(bt.Strategy):
 
         """
         self.trade_count = 0
-        self.position_dt = defaultdict(dict)
-        self.o = defaultdict(dict)
+        self.o = dict()
         self.inds = dict()
+        # add the indicators for each data feed
         for i, d in enumerate(self.datas):
             self.inds[d] = dict()
-            self.inds[d]['volume_average'] = bt.indicators.SimpleMovingAverage(d.volume,
-                                                                               period=self.params.volume_average_period)
-            self.inds[d]['price_max'] = bt.indicators.Highest(d.close, period=self.params.price_average_period)
+            self.inds[d]['sma1'] = bt.indicators.SimpleMovingAverage(
+                d.close, period=self.params.sma1)
+            self.inds[d]['sma2'] = bt.indicators.SimpleMovingAverage(
+                d.close, period=self.params.sma2)
+            self.inds[d]['cross'] = bt.indicators.CrossOver(self.inds[d]['sma1'], self.inds[d]['sma2'])  # plot=False
             if self.params.plot_tickers == "False":
-                self.inds[d]['volume_average'].plotinfo.subplot = False
-                self.inds[d]['price_max'].plotinfo.subplot = False
+                self.inds[d]['sma1'].plotinfo.subplot = False
+                self.inds[d]['sma2'].plotinfo.subplot = False
+                self.inds[d]['cross'].plotinfo.subplot = False
 
     def log(self, txt, dt=None):
         """The logger for the strategy.
@@ -174,7 +168,7 @@ class PumpStrategy(bt.Strategy):
             if data.datetime.date(1) < start_date:
                 start_date = data.datetime.date(1)
         self.start_date = start_date
-        print(f"Pump strategy start date: {self.start_date}")
+        print(f"Strategy start date: {self.start_date}")
 
     def nextstart(self):
         """This method runs exactly once to mark the switch between prenext and next.
@@ -225,69 +219,47 @@ class PumpStrategy(bt.Strategy):
         for i, d in enumerate(self.d_with_len):
             dn = d._name
             # self.log(f"{dn} has close: {d.close[0]} and open {d.open[0]}", dt)
+
             # if there are no orders already for this ticker
             if not self.o.get(d, None):
-                # need data from yesterday
-                if len(d.close.get(size=1, ago=-1)) > 0:
-                    condition_a = d.volume[0] > (self.params.volume_factor * self.inds[d]['volume_average'][0])
-                    condition_b = self.params.price_comparison_lower_bound < (
-                                d.high[0] / d.close.get(size=1, ago=-1)[0]) < self.params.price_comparison_upper_bound
-                    condition_c = d.close[0] >= self.inds[d]['price_max'][0]
 
-                    # self.log(f"{dn}: {condition_a} {condition_b} {condition_c}", dt)
-                    # self.log(f"{dn}: condition_a details: "
-                    #          f"{d.volume[0] * self.params.volume_factor} > {self.inds[d]['volume_average'][0]}", dt)
-                    # self.log(f"{dn}: condition_b details: {(d.high[0] / d.close.get(size=1, ago=-1)[0])}", dt)
-                    # self.log(f"{dn}: condition_c details: {d.close[0]} >= {self.inds[d]['price_max'][0]}", dt)
-
-                    # check for buy signal
-                    if condition_a and condition_b and condition_c:
-                        # if we don't already have a position
-                        if not self.getposition(d).size:
-                            # if the total portfolio positions limit has not been exceeded
-                            if position_count < self.params.position_limit:
-                                # if we had a position before
-                                if self.position_dt[d].get('end'):
-                                    days_elapsed = (dt - self.position_dt[d]['end']).days
-                                    # enforce a timeout period to avoid buying back soon after closing
-                                    if days_elapsed > self.params.buy_timeout:
-                                        self.o[d] = self.buy(data=d, exectype=bt.Order.Market)
-                                        self.trade_count = self.trade_count + 1
-                                        self.position_dt[d]['start'] = dt
-                                        self.log(f"Buy {dn} after {days_elapsed} days since"
-                                                 f" close of last position", dt)
-                                    else:
-                                        self.log(f"Did not buy {dn} after only {days_elapsed} days since last hold", dt)
-                                # we did not have a position before
-                                else:
-                                    self.o[d] = self.buy(data=d)
-                                    self.trade_count = self.trade_count + 1
-                                    self.position_dt[d]['start'] = dt
-                                    self.log(f"Buy {dn} for the first time", dt)
-                            else:
-                                self.log(f"Cannot buy {dn} as I have {position_count} positions already", dt)
+                # buy signal
+                if self.inds[d]['cross'] == 1:
+                    if position_count <= self.params.position_limit:
+                        # we are short currently
+                        if self.getposition(d).size < 0:
+                            # close short position and open long position
+                            self.o[d] = self.close(data=d, exectype=bt.Order.Market)
+                            self.o[d] = self.buy(data=d, exectype=bt.Order.Market)
+                            self.trade_count = self.trade_count + 2
+                        # we are long currently so no action is required
+                        elif self.getposition(d).size > 0:
+                            self.log(f"Cannot action buy signal for {dn} as I am long already", dt)
+                        # there is no open position
                         else:
-                            self.log(f"Cannot buy {dn} as I am already long", dt)
+                            self.o[d] = self.buy(data=d, exectype=bt.Order.Market)
+                            self.trade_count = self.trade_count + 1
+                    else:
+                        self.log(f"Cannot action buy signal for {dn} as I have {position_count} positions already", dt)
 
-                # consider taking profit if we have a position
-                if self.getposition(data=d).size:
-                    # print(f"Today's price is {d.close[0]:.6f} and I need sell "
-                    #       f"{self.params.profit_factor * self.getposition(data=d).price:.6f} to sell")
-
-                    # take profit based on profit threshold
-                    if d.close[0] >= self.params.profit_factor * self.getposition(data=d).price:
-                        self.o[d] = self.close(data=d, exectype=bt.Order.Market)
-                        self.trade_count = self.trade_count + 1
-                        self.position_dt[d]['end'] = dt
-                        self.log(f"Close {dn} position as {self.params.profit_factor} profit reached", dt)
-
-                    # enforce a timeout to abandon a trade
-                    days_elapsed = (dt - self.position_dt[d]['start']).days
-                    if days_elapsed > self.params.sell_timeout:
-                        self.o[d] = self.close(data=d, exectype=bt.Order.Market)
-                        self.trade_count = self.trade_count + 1
-                        self.position_dt[d]['end'] = dt
-                        self.log(f"Abandon {dn} position after {days_elapsed} days since start of position", dt)
+                # sell signal
+                elif self.inds[d]['cross'] == -1:
+                    if position_count <= self.params.position_limit:
+                        # we are short currently so no action is required
+                        if self.getposition(d).size < 0:
+                            self.log(f"Cannot action sell signal for {dn} as I am short already", dt)
+                        # we are long currently
+                        elif self.getposition(d).size > 0:
+                            # close long position and open short position
+                            self.o[d] = self.close(data=d, exectype=bt.Order.Market)
+                            self.o[d] = self.sell(data=d, exectype=bt.Order.Market)
+                            self.trade_count = self.trade_count + 2
+                        # there is no open position
+                        else:
+                            self.o[d] = self.sell(data=d, exectype=bt.Order.Market)
+                            self.trade_count = self.trade_count + 1
+                    else:
+                        self.log(f"Cannot action sell signal for {dn} as I have {position_count} positions already", dt)
 
     def stop(self):
         """Runs when the strategy stops. Record the final value of the portfolio and calculate the CAGR.
@@ -304,14 +276,14 @@ class PumpStrategy(bt.Strategy):
             if data.datetime.date(0) > end_date:
                 end_date = data.datetime.date(0)
         self.end_date = end_date
-        print(f"Pump strategy end date: {self.end_date}")
+        print(f"Strategy end date: {self.end_date}")
         self.elapsed_days = (self.end_date - self.start_date).days
         self.end_val = self.broker.get_value()
         self.cagr = 100 * ((self.end_val / self.start_val) ** (
                 1 / (self.elapsed_days / 365.25)) - 1)
-        print(f"Pump strategy CAGR: {self.cagr:.4f}% (over {(self.elapsed_days / 365.25):.2f} years "
+        print(f"Crossover strategy CAGR: {self.cagr:.4f}% (over {(self.elapsed_days / 365.25):.2f} years "
               f"with {self.trade_count} trades)")
-        print(f"Pump strategy Portfolio Value: {self.end_val}")
+        print(f"Crossover strategy portfolio value: {self.end_val}")
 
     def notify_trade(self, trade):
         """Handle trades and provide a notification from the broker based on the trade.
@@ -327,7 +299,6 @@ class PumpStrategy(bt.Strategy):
         """
         dt = self.datetime.date()
         if trade.isclosed:
-            days_held = (trade.close_datetime().date() - trade.open_datetime().date()).days
-            self.log(f"Today is {dt} and position in {trade.data._name} which opened on {trade.open_datetime().date()} "
-                     f"is now closed after {days_held} days with PnL Gross {trade.pnl:.2f} and PnL Net "
+            self.log(f"Position in {trade.data._name} opened on {trade.open_datetime().date()} and closed "
+                     f"on {trade.close_datetime().date()} with PnL Gross {trade.pnl:.2f} and PnL Net "
                      f"{trade.pnlcomm:.2f}", dt)

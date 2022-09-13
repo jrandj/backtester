@@ -5,7 +5,7 @@ import backtrader as bt
 import csv
 
 
-class CrossoverStrategyLongOnly(bt.Strategy):
+class CrossoverLongOnly(bt.Strategy):
     """
     This strategy uses 2 ETFs to represent long and short positions. Requires that data.bulk is set to False,
     and data.tickers=long_ETF,short_ETF.

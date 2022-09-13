@@ -12,13 +12,13 @@ import glob
 
 from CustomSizer import CustomSizer
 from TickerData import TickerData
-from CrossoverStrategy import CrossoverStrategy
-from PumpStrategy import PumpStrategy
-from CrossoverPlusStrategy import CrossoverPlusStrategy
-from CrossoverStrategyLongOnly import CrossoverStrategyLongOnly
-from HolyGrail import HolyGrail
+from strategies.Crossover import Crossover
+from strategies.Pump import Pump
+from strategies.CrossoverPlus import CrossoverPlus
+from strategies.CrossoverLongOnly import CrossoverLongOnly
+from strategies.HolyGrail import HolyGrail
 # from PairStrategy import PairStrategy
-from Benchmark import Benchmark
+from strategies.Benchmark import Benchmark
 from CustomCommissionScheme import CustomCommissionScheme
 
 
@@ -171,6 +171,8 @@ class Backtester:
                         limit = int(self.config['crossover_strategy_options']['crossover_strategy_sma1'])
                     elif self.config['global_options']['strategy'] == 'CrossoverPlus':
                         limit = int(self.config['crossover_plus_strategy_options']['crossover_plus_strategy_sma2'])
+                    elif self.config['global_options']['strategy'] == 'HolyGrail':
+                        limit = 2 * int(self.config['holygrail_strategy_options']['adx_period'])
                     elif self.config['global_options']['strategy'] == 'Pump':
                         limit = max(int(self.config['pump_strategy_options']['price_average_period']),
                                     int(self.config['pump_strategy_options']['volume_average_period']))
@@ -278,13 +280,13 @@ class Backtester:
         self.cerebro.addanalyzer(bt.analyzers.PyFolio, _name='pyfolio')
 
         if self.config['global_options']['strategy'] == 'Pump':
-            self.cerebro.addstrategy(PumpStrategy, verbose=True, log_file='out/strategy_log.csv')
-        if self.config['global_options']['strategy'] == 'HolyGrail':
+            self.cerebro.addstrategy(Pump, verbose=True, log_file='out/strategy_log.csv')
+        elif self.config['global_options']['strategy'] == 'HolyGrail':
             self.cerebro.addstrategy(HolyGrail, verbose=True, log_file='out/strategy_log.csv')
         elif self.config['global_options']['strategy'] == 'Crossover':
-            self.cerebro.addstrategy(CrossoverStrategy, verbose=True, log_file='out/strategy_log.csv')
+            self.cerebro.addstrategy(Crossover, verbose=True, log_file='out/strategy_log.csv')
         elif self.config['global_options']['strategy'] == 'CrossoverLongOnly':
-            self.cerebro.addstrategy(CrossoverStrategyLongOnly, verbose=True, log_file='out/strategy_log.csv')
+            self.cerebro.addstrategy(CrossoverLongOnly, verbose=True, log_file='out/strategy_log.csv')
         elif self.config['global_options']['strategy'] == 'CrossoverPlus':
             if self.config['crossover_plus_strategy_options']['optimise'] == "True":
                 for ii in range(int(self.config['crossover_plus_strategy_options']['sma1_low']),
@@ -303,13 +305,14 @@ class Backtester:
                                 for mm in range(int(self.config['crossover_plus_strategy_options']['RSI_period_low']),
                                                 int(self.config['crossover_plus_strategy_options']['RSI_period_high']),
                                                 int(self.config['crossover_plus_strategy_options']['RSI_period_step'])):
-                                    self.cerebro.optstrategy(CrossoverPlusStrategy, sma1=ii, sma2=jj,
+                                    self.cerebro.optstrategy(CrossoverPlus, sma1=ii, sma2=jj,
                                                              RSI_crossover_low=kk,
                                                              RSI_crossover_high=ll, RSI_period=mm)
             else:
-                self.cerebro.addstrategy(CrossoverPlusStrategy, verbose=True, log_file='out/strategy_log.csv')
+                self.cerebro.addstrategy(CrossoverPlus, verbose=True, log_file='out/strategy_log.csv')
         else:
-            raise ValueError(f"Strategy {self.config['global_options']['strategy']} must be Pump or Crossover.")
+            raise ValueError(f"Strategy {self.config['global_options']['strategy']} must be Pump, HolyGrail, "
+                             f"Crossover, CrossoverLongOnly or CrossoverPlus.")
         self.cerebro.addsizer(CustomSizer, percents=float(self.config['global_options']['position_size']))
         print(f"Running {self.config['global_options']['strategy']} strategy...")
         if self.config['global_options']['vectorised'] == 'True':

@@ -1,74 +1,58 @@
-import configparser
-
 from pathlib import Path
 import backtrader as bt
 import csv
 
 
-class CrossoverPlusStrategy(bt.Strategy):
+class PairStrategy(bt.Strategy):
     """
     A class that contains the trading strategy.
 
     Attributes
     ----------
-    cagr : float
-        The Compound Annual Growth Rate (CAGR) for the strategy.
-    config : configparser.RawConfigParser
-        The object that will read configuration from the configuration file.
-    d_with_len : list
-        The subset of data that is guaranteed to be available.
-    elapsed_days : int
-        The amount of days between the start and end date.
-    end_date : datetime.date
-        The ending date of the strategy.
-    end_val : float
-        The ending value of the strategy.
-    inds : dict
-        The indicators for all tickers.
-    o : dict
-        The orders for all tickers.
     params : tuple
         Parameters for the strategy.
-    start_date : datetime.date
-        The starting date of the strategy.
+    o : dict
+        The orders for all tickers.
+    inds : dict
+        The indicators for all tickers.
     start_val : float
         The starting value of the strategy.
-    trade_count : int
-        The total number of trades executed by the strategy.
+    end_val : float
+        The ending value of the strategy.
+    start_date : datetime.date
+        The starting date of the strategy.
+    end_date : datetime.date
+        The ending date of the strategy.
+    elapsed_days : int
+        The amount of days between the start and end date.
+    cagr : float
+        The Compound Annual Growth Rate (CAGR) for the strategy.
+    d_with_len : list
+        The subset of data that is guaranteed to be available.
 
     Methods
     -------
     log()
         The logger for the strategy.
-    next()
-        The method used for all remaining data points once the minimum period of all data/indicators has been met.
-    nextstart()
-        This method runs exactly once to mark the switch between prenext and next.
     notify_order()
         Handle orders and provide a notification from the broker based on the order.
-    notify_trade()
-        Handle trades and provide a notification from the broker based on the trade.
-    prenext()
-        The method is used all data points once the minimum period of all data/indicators has been met.
     start()
         Runs at the start. Records starting portfolio value and time.
+    prenext()
+        The method is used all data points once the minimum period of all data/indicators has been met.
+    nextstart()
+        This method runs exactly once to mark the switch between prenext and next.
+    next()
+        The method used for all remaining data points once the minimum period of all data/indicators has been met.
     stop()
         Runs when the strategy stops. Record the final value of the portfolio and calculate the CAGR.
+    notify_trade()
+        Handle trades and provide a notification from the broker based on the trade.
     """
-    config = configparser.RawConfigParser()
-    config.read('config.properties')
-
     # parameters for the strategy
     params = (
         ('verbose', True),
-        ('sma1', int(config['crossover_plus_strategy_options']['crossover_plus_strategy_sma1'])),
-        ('sma2', int(config['crossover_plus_strategy_options']['crossover_plus_strategy_sma2'])),
-        ('RSI_period', int(config['crossover_plus_strategy_options']['RSI_period'])),
-        ('RSI_crossover_low', int(config['crossover_plus_strategy_options']['RSI_crossover_low'])),
-        ('RSI_crossover_high', int(config['crossover_plus_strategy_options']['RSI_crossover_high'])),
-        ('position_limit', int(config['global_options']['position_limit'])),
-        ('plot_tickers', config['global_options']['plot_tickers']),
-        ('log_file', 'CrossoverPlusStrategy.csv')
+        ('log_file', 'PairStrategy.csv')
     )
 
     def __init__(self):
@@ -81,23 +65,19 @@ class CrossoverPlusStrategy(bt.Strategy):
         ------
 
         """
-        self.trade_count = 0
         self.o = dict()
-        self.inds = dict()
-        # add the indicators for each data feed
-        for i, d in enumerate(self.datas):
-            self.inds[d] = dict()
-            self.inds[d]['sma1'] = bt.indicators.SimpleMovingAverage(
-                d.close, period=self.params.sma1)
-            self.inds[d]['sma2'] = bt.indicators.SimpleMovingAverage(
-                d.close, period=self.params.sma2)
-            self.inds[d]['RSI'] = bt.indicators.RSI(d.close, period=self.params.RSI_period, safediv=True)
-            self.inds[d]['PPO'] = bt.indicators.PercentagePriceOscillator(d.close)
-            if self.params.plot_tickers == "False":
-                self.inds[d]['sma1'].plotinfo.subplot = False
-                self.inds[d]['sma2'].plotinfo.subplot = False
-                self.inds[d]['RSI'].plotinfo.subplot = False
-                self.inds[d]['PPO'].plotinfo.subplot = False
+        print("hey")
+        # self.inds = dict()
+        # # add the indicators for each data feed
+        # for i, d in enumerate(self.datas):
+        #     self.inds[d] = dict()
+        #     self.inds[d]['sma1'] = bt.indicators.SimpleMovingAverage(
+        #         d.close, period=self.params.sma1)
+        #     self.inds[d]['sma2'] = bt.indicators.SimpleMovingAverage(
+        #         d.close, period=self.params.sma2)
+        #     self.inds[d]['cross'] = bt.indicators.CrossOver(self.inds[d]['sma1'], self.inds[d]['sma2'])  # plot=False
+
+
 
     def log(self, txt, dt=None):
         """The logger for the strategy.
@@ -227,23 +207,19 @@ class CrossoverPlusStrategy(bt.Strategy):
             # if there are no orders already for this ticker
             if not self.o.get(d, None):
                 # check the signals
-                if self.inds[d]['sma1'] >= self.inds[d]['sma2'] \
-                        and self.inds[d]['RSI'] <= self.params.RSI_crossover_low and self.inds[d]['PPO'] > 0:
+                if self.inds[d]['cross'] == 1:
                     if not self.getposition(d).size:
                         if position_count < self.params.position_limit:
                             # self.log(f"Buying {dn} with close: {d.close[0]} or open {d.open[0]}", dt)
                             # self.o[d] = [self.buy(data=d), d.close.get(size=1, ago=-1)[0]]
-                            self.o[d] = self.buy(data=d, exectype=bt.Order.Market)
-                            self.trade_count = self.trade_count + 1
+                            self.o[d] = self.buy(data=d)
                         else:
                             self.log(f"Cannot buy {dn} as I have {position_count} positions already", dt)
                     else:
-                        self.log(f"Cannot buy {dn} as I already long", dt)
-                elif self.inds[d]['sma1'] < self.inds[d]['sma2'] \
-                        and self.inds[d]['RSI'] >= self.params.RSI_crossover_high and self.inds[d]['PPO'] < 0:
+                        self.log(f"Cannot buy {dn} as I am already long", dt)
+                elif self.inds[d]['cross'] == -1:
                     if self.getposition(d).size:
-                        self.o[d] = self.close(data=d, exectype=bt.Order.Market)
-                        self.trade_count = self.trade_count + 1
+                        self.o[d] = self.close(data=d)
                     else:
                         self.log(f"Cannot sell {dn} as I am not long", dt)
 
@@ -263,15 +239,12 @@ class CrossoverPlusStrategy(bt.Strategy):
                 end_date = data.datetime.date(0)
         self.end_date = end_date
         print(f"Strategy end date: {self.end_date}")
-        # print(f"sma1 {self.params.sma1} sma2 {self.params.sma2} RSI_period {self.params.RSI_period} "
-        #       f"RSI_crossover_low {self.params.RSI_crossover_low} RSI_crossover_high {self.params.RSI_crossover_high}")
         self.elapsed_days = (self.end_date - self.start_date).days
         self.end_val = self.broker.get_value()
         self.cagr = 100 * ((self.end_val / self.start_val) ** (
                 1 / (self.elapsed_days / 365.25)) - 1)
-        print(f"Strategy CAGR: {self.cagr:.4f}% (over {(self.elapsed_days / 365.25):.2f} years "
-              f"with {self.trade_count} trades)")
-        print(f"Strategy portfolio value: {self.end_val}")
+        print(f"Strategy CAGR: {self.cagr:.4f}% (over {(self.elapsed_days / 365.25):.2f} years)")
+        print(f"Strategy Portfolio Value: {self.end_val}")
 
     def notify_trade(self, trade):
         """Handle trades and provide a notification from the broker based on the trade.

@@ -5,7 +5,7 @@ import backtrader as bt
 import csv
 
 
-class CrossoverStrategy(bt.Strategy):
+class CrossoverPlus(bt.Strategy):
     """
     A class that contains the trading strategy.
 
@@ -61,11 +61,14 @@ class CrossoverStrategy(bt.Strategy):
     # parameters for the strategy
     params = (
         ('verbose', True),
-        ('sma1', int(config['crossover_strategy_options']['crossover_strategy_sma1'])),
-        ('sma2', int(config['crossover_strategy_options']['crossover_strategy_sma2'])),
+        ('sma1', int(config['crossover_plus_strategy_options']['crossover_plus_strategy_sma1'])),
+        ('sma2', int(config['crossover_plus_strategy_options']['crossover_plus_strategy_sma2'])),
+        ('RSI_period', int(config['crossover_plus_strategy_options']['RSI_period'])),
+        ('RSI_crossover_low', int(config['crossover_plus_strategy_options']['RSI_crossover_low'])),
+        ('RSI_crossover_high', int(config['crossover_plus_strategy_options']['RSI_crossover_high'])),
         ('position_limit', int(config['global_options']['position_limit'])),
         ('plot_tickers', config['global_options']['plot_tickers']),
-        ('log_file', 'CrossoverStrategy.csv')
+        ('log_file', 'CrossoverPlusStrategy.csv')
     )
 
     def __init__(self):
@@ -88,11 +91,13 @@ class CrossoverStrategy(bt.Strategy):
                 d.close, period=self.params.sma1)
             self.inds[d]['sma2'] = bt.indicators.SimpleMovingAverage(
                 d.close, period=self.params.sma2)
-            self.inds[d]['cross'] = bt.indicators.CrossOver(self.inds[d]['sma1'], self.inds[d]['sma2'])  # plot=False
+            self.inds[d]['RSI'] = bt.indicators.RSI(d.close, period=self.params.RSI_period, safediv=True)
+            self.inds[d]['PPO'] = bt.indicators.PercentagePriceOscillator(d.close)
             if self.params.plot_tickers == "False":
                 self.inds[d]['sma1'].plotinfo.subplot = False
                 self.inds[d]['sma2'].plotinfo.subplot = False
-                self.inds[d]['cross'].plotinfo.subplot = False
+                self.inds[d]['RSI'].plotinfo.subplot = False
+                self.inds[d]['PPO'].plotinfo.subplot = False
 
     def log(self, txt, dt=None):
         """The logger for the strategy.
@@ -219,47 +224,28 @@ class CrossoverStrategy(bt.Strategy):
         for i, d in enumerate(self.d_with_len):
             dn = d._name
             # self.log(f"{dn} has close: {d.close[0]} and open {d.open[0]}", dt)
-
             # if there are no orders already for this ticker
             if not self.o.get(d, None):
-
-                # buy signal
-                if self.inds[d]['cross'] == 1:
-                    if position_count <= self.params.position_limit:
-                        # we are short currently
-                        if self.getposition(d).size < 0:
-                            # close short position and open long position
-                            self.o[d] = self.close(data=d, exectype=bt.Order.Market)
-                            self.o[d] = self.buy(data=d, exectype=bt.Order.Market)
-                            self.trade_count = self.trade_count + 2
-                        # we are long currently so no action is required
-                        elif self.getposition(d).size > 0:
-                            self.log(f"Cannot action buy signal for {dn} as I am long already", dt)
-                        # there is no open position
-                        else:
+                # check the signals
+                if self.inds[d]['sma1'] >= self.inds[d]['sma2'] \
+                        and self.inds[d]['RSI'] <= self.params.RSI_crossover_low and self.inds[d]['PPO'] > 0:
+                    if not self.getposition(d).size:
+                        if position_count < self.params.position_limit:
+                            # self.log(f"Buying {dn} with close: {d.close[0]} or open {d.open[0]}", dt)
+                            # self.o[d] = [self.buy(data=d), d.close.get(size=1, ago=-1)[0]]
                             self.o[d] = self.buy(data=d, exectype=bt.Order.Market)
                             self.trade_count = self.trade_count + 1
-                    else:
-                        self.log(f"Cannot action buy signal for {dn} as I have {position_count} positions already", dt)
-
-                # sell signal
-                elif self.inds[d]['cross'] == -1:
-                    if position_count <= self.params.position_limit:
-                        # we are short currently so no action is required
-                        if self.getposition(d).size < 0:
-                            self.log(f"Cannot action sell signal for {dn} as I am short already", dt)
-                        # we are long currently
-                        elif self.getposition(d).size > 0:
-                            # close long position and open short position
-                            self.o[d] = self.close(data=d, exectype=bt.Order.Market)
-                            self.o[d] = self.sell(data=d, exectype=bt.Order.Market)
-                            self.trade_count = self.trade_count + 2
-                        # there is no open position
                         else:
-                            self.o[d] = self.sell(data=d, exectype=bt.Order.Market)
-                            self.trade_count = self.trade_count + 1
+                            self.log(f"Cannot buy {dn} as I have {position_count} positions already", dt)
                     else:
-                        self.log(f"Cannot action sell signal for {dn} as I have {position_count} positions already", dt)
+                        self.log(f"Cannot buy {dn} as I already long", dt)
+                elif self.inds[d]['sma1'] < self.inds[d]['sma2'] \
+                        and self.inds[d]['RSI'] >= self.params.RSI_crossover_high and self.inds[d]['PPO'] < 0:
+                    if self.getposition(d).size:
+                        self.o[d] = self.close(data=d, exectype=bt.Order.Market)
+                        self.trade_count = self.trade_count + 1
+                    else:
+                        self.log(f"Cannot sell {dn} as I am not long", dt)
 
     def stop(self):
         """Runs when the strategy stops. Record the final value of the portfolio and calculate the CAGR.
@@ -277,13 +263,15 @@ class CrossoverStrategy(bt.Strategy):
                 end_date = data.datetime.date(0)
         self.end_date = end_date
         print(f"Strategy end date: {self.end_date}")
+        # print(f"sma1 {self.params.sma1} sma2 {self.params.sma2} RSI_period {self.params.RSI_period} "
+        #       f"RSI_crossover_low {self.params.RSI_crossover_low} RSI_crossover_high {self.params.RSI_crossover_high}")
         self.elapsed_days = (self.end_date - self.start_date).days
         self.end_val = self.broker.get_value()
         self.cagr = 100 * ((self.end_val / self.start_val) ** (
                 1 / (self.elapsed_days / 365.25)) - 1)
-        print(f"Crossover strategy CAGR: {self.cagr:.4f}% (over {(self.elapsed_days / 365.25):.2f} years "
+        print(f"Strategy CAGR: {self.cagr:.4f}% (over {(self.elapsed_days / 365.25):.2f} years "
               f"with {self.trade_count} trades)")
-        print(f"Crossover strategy portfolio value: {self.end_val}")
+        print(f"Strategy portfolio value: {self.end_val}")
 
     def notify_trade(self, trade):
         """Handle trades and provide a notification from the broker based on the trade.
