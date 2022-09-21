@@ -4,6 +4,9 @@ import time
 import numpy as np
 import pandas as pd
 import seaborn as sns
+
+from types import MethodType
+import Patches as Patches
 import backtrader as bt
 import configparser
 import quantstats as qs
@@ -144,7 +147,7 @@ class Backtester:
         print(f"Adding ticker to benchmark: {self.config['data']['benchmark']}")
         self.cerebro_benchmark.adddata(
             TickerData(
-                dataname=self.benchmark_data.loc[self.benchmark_data['Ticker'] == self.config['data']['benchmark']]),
+                dataname=self.data.loc[self.data['Ticker'] == self.config['data']['benchmark']]),
             name=self.config['data']['benchmark'])
 
     def add_strategy_data(self):
@@ -368,6 +371,22 @@ class Backtester:
             print(f"Adding {ticker}")
         correlation_matrix = returns_matrix.corr()
 
+    def import_constituents(self):
+        """
+        Import the .csv file containing constituents at a point in time. The format is Rank,Ticker,Company,Mkt Cap.
+
+        :return: The constituents data.
+        :rtype: pandas.core.frame.DataFrame.
+        """
+        constituents = self.config['data']['constituents']
+        if os.path.isfile(
+                os.path.join(os.path.dirname(__file__), "data", constituents + os.extsep + "csv")):
+            print(f"Reading {constituents} from .csv")
+            constituents_data = pd.read_csv(
+                os.path.join(os.path.dirname(__file__), "data", constituents + os.extsep + "csv"),
+                index_col=False)
+        return constituents_data
+
     def import_data(self):
         """Import OHLCV data. Read from a consolidated hdf file if available, else read from a consolidated .csv file,
         else consolidate the data from various .csv files.
@@ -382,16 +401,17 @@ class Backtester:
         if len(self.config['data']['path']) > 0:
             directory = self.config['data']['path']
         else:
-            directory = os.path.join(os.path.dirname(__file__), "data",
-                                     self.config['data']['path'])
+            directory = os.path.join(os.path.dirname(__file__), "data", self.config['data']['path'])
 
-        # read asx300 constituents data
-        if os.path.isfile(
-                os.path.join(os.path.dirname(__file__), "data", "asx300_constituents_221021" + os.extsep + "csv")):
-            print(f"Reading asx300 constituents (as at 22/10/21) from .csv")
-            asx300_constituents = pd.read_csv(
-                os.path.join(os.path.dirname(__file__), "data", "asx300_constituents_221021" + os.extsep + "csv"),
-                index_col=False)
+        def dateparse(x):
+            if self.config['data']['date_format'] == 'yyyymmdd':
+                return pd.datetime.strptime(x, "%Y%m%d")
+            elif self.config['data']['date_format'] == 'dd-mm-yyyy':
+                return pd.datetime.strptime(x, "%d-%m-%Y")
+            else:
+                raise ValueError(f"Unexpected date format for {x} with parsing format "
+                                 f"{self.config['data']['date_format']}. Date format must "
+                                 f"be yyyymmdd or dd-mm-yyyy.")
 
         # read data
         if os.path.isfile(os.path.join(directory, "data" + os.extsep + "h5")):
@@ -403,32 +423,41 @@ class Backtester:
                                parse_dates=["Date"], dayfirst=True)
             data.to_hdf(os.path.join(directory, "data" + os.extsep + "h5"), 'table', append=True)
         else:
-            print(f"Reading data from .csv in directory and creating consolidated files for future use")
+            print(f"Reading data from .csv files in directory and creating consolidated files for future use")
             data = pd.DataFrame()
             all_files = glob.glob(os.path.join(directory, "*.csv"))
 
-            def dateparse(x):
-                return pd.datetime.strptime(x, "%Y%m%d")
+            for file_path in all_files:
+                file_name = os.path.basename(file_path).split(os.extsep)[0]
+                if file_name != os.path.join(self.config['data']['constituents']):
+                    cols = self.config['data']['cols'].split(",")
+                    if "Adjusted Close" in cols and "Ticker" in cols:
+                        dtype_dict = {"Adjusted Close": float, "Ticker": str}
+                    elif "Adjusted Close" in cols:
+                        dtype_dict = {"Adjusted Close": float}
+                    elif "Ticker" in cols:
+                        dtype_dict = {"Ticker": str}
 
-            for file_name in all_files:
-                if file_name != os.path.join(directory, self.config['data']['benchmark'] + os.extsep + "csv") and \
-                        file_name != os.path.join(directory, "asx300_constituents_221021" + os.extsep + "csv"):
-                    x = pd.read_csv(file_name, names=["Date", "Open", "High", "Low", "Close", "Volume", "Ticker"],
-                                    parse_dates=["Date"], dayfirst=True, dtype={"Ticker": str}, skiprows=1,
+                    x = pd.read_csv(file_path, names=cols,
+                                    parse_dates=["Date"], dayfirst=True, skiprows=1, dtype=dtype_dict,
                                     date_parser=dateparse)
+
+                    # add the Ticker column if it is not in the data
+                    if "Ticker" not in cols:
+                        x = x.assign(Ticker=file_name)
+                    # use adjusted close if configured
+                    if self.config.getboolean('data', 'use_adjusted_close'):
+                        x['Close'] = x['Adjusted Close']
                     data = pd.concat([data, x], ignore_index=True)
                     os.path.join(directory, "data" + os.extsep + "csv")
+
             data.to_csv(os.path.join(directory, "data" + os.extsep + "csv"), sep=",", index=False, date_format='%Y%m%d')
             data.to_hdf(os.path.join(directory, "data" + os.extsep + "h5"), 'table', append=True)
 
-        # read benchmark data
-        benchmark_data = pd.read_csv(
-            os.path.join(directory, self.config['data']['benchmark'] + os.extsep + "csv"),
-            parse_dates=['Date'], dayfirst=True)
-
         # apply date ranges
-        comparison_start = max(data['Date'].min(), benchmark_data['Date'].min())
-        comparison_end = min(data['Date'].max(), benchmark_data['Date'].max())
+        comparison_start = max(data['Date'].min(),
+                               data[data['Ticker'] == self.config['data']['benchmark']]['Date'].min())
+        comparison_end = min(data['Date'].max(), data[data['Ticker'] == self.config['data']['benchmark']]['Date'].max())
         # allow override from config
         if len(self.config['data']['start_date']) > 0 and pd.to_datetime(self.config['data']['start_date'],
                                                                          format='%d/%m/%Y') < comparison_end:
@@ -437,10 +466,10 @@ class Backtester:
                                                                        format='%d/%m/%Y') > comparison_start:
             comparison_end = pd.to_datetime(self.config['data']['end_date'])
         data = data[(data['Date'] > comparison_start) & (data['Date'] < comparison_end)]
-        benchmark_data = benchmark_data[
-            (benchmark_data['Date'] > comparison_start) & (benchmark_data['Date'] < comparison_end)]
+        # benchmark_data = benchmark_data[
+        #     (benchmark_data['Date'] > comparison_start) & (benchmark_data['Date'] < comparison_end)]
         print(f"Data range is between {comparison_start.date()} and {comparison_end.date()}")
-        return data, benchmark_data, asx300_constituents
+        return data
 
     def __init__(self):
         # set initial configuration
@@ -451,9 +480,10 @@ class Backtester:
         self.clean_logs()
 
         # import data
-        self.data, self.benchmark_data, self.asx300_constituents = self.import_data()
+        self.data = self.import_data()
+        self.constituents = self.import_constituents()
         if self.config['data']['bulk'] == 'True' and self.config['global_options']['small_cap_only'] == 'True':
-            self.tickers = set(self.data['Ticker'].unique()) - set(self.asx300_constituents['Ticker'])
+            self.tickers = set(self.data['Ticker'].unique()) - set(self.constituents['Ticker'])
         elif self.config['data']['bulk'] == 'True' and self.config['global_options']['small_cap_only'] == 'False':
             self.tickers = self.data['Ticker'].unique()
         else:
@@ -487,7 +517,8 @@ class Backtester:
         self.cerebro_benchmark = bt.Cerebro(stdstats=False)
         self.benchmark_results = self.run_benchmark()
         self.benchmark_stats = self.benchmark_results[0].analyzers.getbyname('pyfolio')
-        self.benchmark_returns, self.benchmark_positions, self.benchmark_transactions, self.benchmark_gross_lev = self.benchmark_stats.get_pf_items()
+        self.benchmark_returns, self.benchmark_positions, self.benchmark_transactions, \
+        self.benchmark_gross_lev = self.benchmark_stats.get_pf_items()
         if self.config['global_options']['reports'] == 'True':
             self.run_benchmark_reports()
         self.benchmark_end_value = self.cerebro_benchmark.broker.getvalue()
@@ -495,6 +526,9 @@ class Backtester:
 
 def main():
     start = time.time()
+    # patch backtrader methods (to avoid raising a pull request for backtrader which is no longer maintained)
+    bt.linebuffer.LinesOperation.next = Patches.next
+    bt.linebuffer.LinesOperation._once_op = Patches._once_op
     backtester = Backtester()
     duration = time.time() - start
     print(f"Runtime: {backtester.format_time(duration)}")
