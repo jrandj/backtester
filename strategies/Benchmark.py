@@ -140,5 +140,5 @@ class Benchmark(bt.Strategy):
         self.end_val = self.broker.get_value()
         self.cagr = 100 * ((self.end_val / self.start_val) ** (
                 1 / (self.elapsed_days / 365.25)) - 1)
-        print(f"Benchmark CAGR: {self.cagr:.4f}% (over {(self.elapsed_days / 365.25):.2f} years)")
+        print(f"Benchmark CAGR: {self.cagr:.2f}% (over {(self.elapsed_days / 365.25):.2f} years)")
         print(f"Benchmark Portfolio Value: {self.end_val}")

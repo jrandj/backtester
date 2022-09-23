@@ -5,13 +5,11 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from types import MethodType
 import Patches as Patches
 import backtrader as bt
 import configparser
 import quantstats as qs
 import glob
-# from yahooquery import Ticker
 
 from CustomSizer import CustomSizer
 from TickerData import TickerData
@@ -20,13 +18,13 @@ from strategies.Pump import Pump
 from strategies.CrossoverPlus import CrossoverPlus
 from strategies.CrossoverLongOnly import CrossoverLongOnly
 from strategies.HolyGrail import HolyGrail
-# from PairStrategy import PairStrategy
 from strategies.Benchmark import Benchmark
 from CustomCommissionScheme import CustomCommissionScheme
 
 
 class Backtester:
-    """A class that wraps the Backtrader framework.
+    """
+    A class that wraps the Backtrader framework.
 
     Attributes
     ----------
@@ -446,7 +444,7 @@ class Backtester:
                     if "Ticker" not in cols:
                         x = x.assign(Ticker=file_name)
                     # use adjusted close if configured
-                    if self.config.getboolean('data', 'use_adjusted_close'):
+                    if self.config.getboolean('global_options', 'use_adjusted_close'):
                         x['Close'] = x['Adjusted Close']
                     data = pd.concat([data, x], ignore_index=True)
                     os.path.join(directory, "data" + os.extsep + "csv")
