@@ -322,9 +322,9 @@ class Backtester:
             results = self.cerebro.run(runonce=False, optreturn=False)  # optreturn defaults to True
         if self.config['global_options']['plot_enabled'] == 'True':
             if self.config['global_options']['plot_volume'] == 'True':
-                self.cerebro.plot(style='candlestick')
+                self.cerebro.plot(style='candlestick', iplot=False)
             else:
-                self.cerebro.plot(volume=False, style='candlestick')
+                self.cerebro.plot(volume=False, style='candlestick', iplot=False)
         return results
 
     @staticmethod

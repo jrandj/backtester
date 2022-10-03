@@ -121,8 +121,7 @@ This strategy aims to profit from index funds which are required to periodically
 
 The following pre-requisites are required:
 
-1. [Python 3.9.12](https://www.python.org/downloads/release/python-3912/).
-1. [Anaconda](https://www.anaconda.com/products/individual).
+1. [Anaconda 22.9.0](https://www.anaconda.com/products/distribution).
 
 Once these are installed:
 
