@@ -67,7 +67,7 @@ class CrossoverPlus(bt.Strategy):
         ('RSI_crossover_low', int(config['crossover_plus_strategy_options']['RSI_crossover_low'])),
         ('RSI_crossover_high', int(config['crossover_plus_strategy_options']['RSI_crossover_high'])),
         ('position_limit', int(config['global_options']['position_limit'])),
-        ('plot_tickers', config['global_options']['plot_tickers']),
+        ('plot_tickers', config.getboolean('global_options', 'plot_tickers')),
         ('log_file', 'CrossoverPlusStrategy.csv')
     )
 
@@ -93,7 +93,7 @@ class CrossoverPlus(bt.Strategy):
                 d.close, period=self.params.sma2)
             self.inds[d]['RSI'] = bt.indicators.RSI(d.close, period=self.params.RSI_period, safediv=True)
             self.inds[d]['PPO'] = bt.indicators.PercentagePriceOscillator(d.close)
-            if self.params.plot_tickers == "False":
+            if not self.params.plot_tickers:
                 self.inds[d]['sma1'].plotinfo.subplot = False
                 self.inds[d]['sma2'].plotinfo.subplot = False
                 self.inds[d]['RSI'].plotinfo.subplot = False

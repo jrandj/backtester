@@ -69,7 +69,7 @@ class CrossoverLongOnly(bt.Strategy):
         ('sma1', int(config['crossover_strategy_long_only_options']['crossover_strategy_long_only_sma1'])),
         ('sma2', int(config['crossover_strategy_long_only_options']['crossover_strategy_long_only_sma2'])),
         ('position_limit', int(config['global_options']['position_limit'])),
-        ('plot_tickers', config['global_options']['plot_tickers']),
+        ('plot_tickers', config.getboolean('global_options', 'plot_tickers')),
         ('log_file', 'CrossoverStrategy.csv')
     )
 
@@ -93,7 +93,7 @@ class CrossoverLongOnly(bt.Strategy):
         self.inds[0]['sma2'] = bt.indicators.SimpleMovingAverage(
             self.datas[0].close, period=self.params.sma2)
         self.inds[0]['cross'] = bt.indicators.CrossOver(self.inds[0]['sma1'], self.inds[0]['sma2'])  # plot=False
-        if self.params.plot_tickers == "False":
+        if not self.params.plot_tickers:
             self.inds[0]['sma1'].plotinfo.subplot = False
             self.inds[0]['sma2'].plotinfo.subplot = False
             self.inds[0]['cross'].plotinfo.subplot = False

@@ -60,7 +60,7 @@ class HolyGrail(bt.Strategy):
         ('bounce_off_max', float(config['holygrail_strategy_options']['bounce_off_max'])),
         ('position_limit', int(config['global_options']['position_limit'])),
         ('lag_days', int(config['holygrail_strategy_options']['lag_days'])),
-        ('plot_tickers', config['global_options']['plot_tickers']),
+        ('plot_tickers', config.getboolean('global_options', 'plot_tickers')),
         ('log_file', 'HolyGrail.csv')
     )
 
@@ -110,7 +110,7 @@ class HolyGrail(bt.Strategy):
             self.waiting_days_short[d] = 0
             self.waiting_days_long[d] = 0
 
-            if self.params.plot_tickers == "False":
+            if not self.params.plot_tickers:
                 self.inds[d]['adx'].plotinfo.subplot = False
                 self.inds[d]['ema_long'].plotinfo.subplot = False
                 self.inds[d]['ema_short'].plotinfo.subplot = False

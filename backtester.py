@@ -19,6 +19,7 @@ from strategies.CrossoverPlus import CrossoverPlus
 from strategies.CrossoverLongOnly import CrossoverLongOnly
 from strategies.HolyGrail import HolyGrail
 from strategies.Benchmark import Benchmark
+from strategies.TurtleSoup import TurtleSoup
 from CustomCommissionScheme import CustomCommissionScheme
 
 
@@ -167,20 +168,24 @@ class Backtester:
         for i, ticker in enumerate(tickers):
             if ticker not in self.config['data']['tickers_for_exclusion'].split(','):
                 ticker_data = self.data.loc[self.data['Ticker'] == ticker]
-                if self.config['global_options']['vectorised'] == 'True':
+                if self.config.getboolean('global_options', 'vectorised'):
                     if self.config['global_options']['strategy'] == 'Crossover':
                         limit = int(self.config['crossover_strategy_options']['crossover_strategy_sma1'])
                     elif self.config['global_options']['strategy'] == 'CrossoverPlus':
                         limit = int(self.config['crossover_plus_strategy_options']['crossover_plus_strategy_sma2'])
                     elif self.config['global_options']['strategy'] == 'HolyGrail':
                         limit = 2 * int(self.config['holygrail_strategy_options']['adx_period'])
+                    elif self.config['global_options']['strategy'] == 'TurtleSoup':
+                        # TBC
+                        # limit = 2 * int(self.config['holygrail_strategy_options']['adx_period'])
+                        pass
                     elif self.config['global_options']['strategy'] == 'Pump':
                         limit = max(int(self.config['pump_strategy_options']['price_average_period']),
                                     int(self.config['pump_strategy_options']['volume_average_period']))
                     if ticker_data['Date'].size > limit:
                         print(f"Adding {ticker} to strategy with {ticker_data['Date'].size} rows")
                         self.cerebro.adddata(TickerData(dataname=ticker_data), name=ticker)
-                        if self.config['global_options']['plot_tickers'] == 'False':
+                        if not self.config.getboolean('global_options', 'plot_tickers'):
                             self.cerebro.datas[index].plotinfo.plot = False
                         index = index + 1
                     else:
@@ -190,7 +195,7 @@ class Backtester:
                 else:
                     if ticker_data['Date'].size > minimum_size_vectorised_false:
                         self.cerebro.adddata(TickerData(dataname=ticker_data), name=ticker)
-                        if self.config['global_options']['plot_tickers'] == 'False':
+                        if not self.config.getboolean('global_options', 'plot_tickers'):
                             self.cerebro.datas[index].plotinfo.plot = False
                         print(f"Adding {ticker} to strategy with {ticker_data['Date'].size} rows")
                         index = index + 1
@@ -213,8 +218,8 @@ class Backtester:
 
         """
         self.returns[0].index = self.returns[0].index.tz_convert(None)
-        qs.reports.html(self.returns[0], output=os.path.join("out/strategy-stats-" + time.strftime(
-            "%Y%d%m-%H%M%S") + os.extsep + ".html"), title='Strategy Performance')
+        qs.reports.html(self.returns[0], output=True, download_filename=os.path.join(
+            "out/strategy-stats-" + time.strftime("%Y%d%m-%H%M%S") + os.extsep + "html"), title="Strategy Performance")
 
     def run_benchmark_reports(self):
         """Run quantstats reports for the benchmark.
@@ -227,8 +232,9 @@ class Backtester:
 
         """
         self.benchmark_returns.index = self.benchmark_returns.index.tz_convert(None)
-        qs.reports.html(self.benchmark_returns, output=os.path.join("out/benchmark-stats-" + time.strftime(
-            "%Y%d%m-%H%M%S") + os.extsep + ".html"), title='Benchmark Performance')
+        qs.reports.html(self.benchmark_returns, output=True, download_filename=os.path.join(
+            "out/benchmark-stats-" + time.strftime("%Y%d%m-%H%M%S") + os.extsep + "html"),
+                        title="Benchmark Performance")
 
     def run_benchmark(self):
         """Run the benchmark strategy.
@@ -252,7 +258,8 @@ class Backtester:
         # self.cerebro_benchmark.addsizer(bt.sizers.AllInSizer)
         print(f"Running benchmark...")
         results = self.cerebro_benchmark.run()  # runonce=False
-        if self.config['global_options']['plot_benchmark'] == 'True':
+
+        if self.config.getboolean('global_options', 'plot_benchmark'):
             self.cerebro_benchmark.plot(volume=False)
         return results
 
@@ -288,8 +295,10 @@ class Backtester:
             self.cerebro.addstrategy(Crossover, verbose=True, log_file='out/strategy_log.csv')
         elif self.config['global_options']['strategy'] == 'CrossoverLongOnly':
             self.cerebro.addstrategy(CrossoverLongOnly, verbose=True, log_file='out/strategy_log.csv')
+        elif self.config['global_options']['strategy'] == 'TurtleSoup':
+            self.cerebro.addstrategy(TurtleSoup, verbose=True, log_file='out/strategy_log.csv')
         elif self.config['global_options']['strategy'] == 'CrossoverPlus':
-            if self.config['crossover_plus_strategy_options']['optimise'] == "True":
+            if self.config.getboolean('crossover_plus_strategy_options', 'optimise'):
                 for ii in range(int(self.config['crossover_plus_strategy_options']['sma1_low']),
                                 int(self.config['crossover_plus_strategy_options']['sma1_high']),
                                 int(self.config['crossover_plus_strategy_options']['sma1_step'])):
@@ -313,18 +322,17 @@ class Backtester:
                 self.cerebro.addstrategy(CrossoverPlus, verbose=True, log_file='out/strategy_log.csv')
         else:
             raise ValueError(f"Strategy {self.config['global_options']['strategy']} must be Pump, HolyGrail, "
-                             f"Crossover, CrossoverLongOnly or CrossoverPlus.")
+                             f"TurtleSoup, Crossover, CrossoverLongOnly or CrossoverPlus.")
         self.cerebro.addsizer(CustomSizer, percents=float(self.config['global_options']['position_size']))
         print(f"Running {self.config['global_options']['strategy']} strategy...")
-        if self.config['global_options']['vectorised'] == 'True':
+
+        if self.config.getboolean('global_options', 'vectorised'):
             results = self.cerebro.run(runonce=True, optreturn=False)  # optreturn defaults to True
         else:
             results = self.cerebro.run(runonce=False, optreturn=False)  # optreturn defaults to True
-        if self.config['global_options']['plot_enabled'] == 'True':
-            if self.config['global_options']['plot_volume'] == 'True':
-                self.cerebro.plot(style='candlestick', iplot=False)
-            else:
-                self.cerebro.plot(volume=False, style='candlestick', iplot=False)
+        if self.config.getboolean('global_options', 'plot_enabled'):
+            self.cerebro.plot(volume=self.config.getboolean('global_options', 'plot_volume'), style='candlestick',
+                              iplot=False)
         return results
 
     @staticmethod
@@ -415,10 +423,17 @@ class Backtester:
         if os.path.isfile(os.path.join(directory, "data" + os.extsep + "h5")):
             print(f"Reading data from consolidated .h5")
             data = pd.read_hdf(os.path.join(directory, "data" + os.extsep + "h5"), 'table')
+
+            if self.config.getboolean('global_options', 'use_adjusted_close'):
+                data['Close'] = np.where(data['Adjusted Close'].notnull() & data['Adjusted Close'] != 0,
+                                         data['Adjusted Close'], data['Close'])
         elif os.path.isfile(os.path.join(directory, "data" + os.extsep + "csv")):
             print(f"Reading data from consolidated .csv")
             data = pd.read_csv(os.path.join(directory, "data" + os.extsep + "csv"), header=0, index_col=False,
                                parse_dates=["Date"], dayfirst=True)
+            if self.config.getboolean('global_options', 'use_adjusted_close'):
+                data['Close'] = np.where(data['Adjusted Close'].notnull() & data['Adjusted Close'] != 0,
+                                         data['Adjusted Close'], data['Close'])
             data.to_hdf(os.path.join(directory, "data" + os.extsep + "h5"), 'table', append=True)
         else:
             print(f"Reading data from .csv files in directory and creating consolidated files for future use")
@@ -443,9 +458,10 @@ class Backtester:
                     # add the Ticker column if it is not in the data
                     if "Ticker" not in cols:
                         x = x.assign(Ticker=file_name)
-                    # use adjusted close if configured
+                    # use adjusted close if configured (does not work at present because no adjusted low, open, high)
                     if self.config.getboolean('global_options', 'use_adjusted_close'):
-                        x['Close'] = x['Adjusted Close']
+                        x['Close'] = np.where(x['Adjusted Close'].notnull() & x['Adjusted Close'] != 0,
+                                              x['Adjusted Close'], x['Close'])
                     data = pd.concat([data, x], ignore_index=True)
                     os.path.join(directory, "data" + os.extsep + "csv")
 
@@ -480,9 +496,10 @@ class Backtester:
         # import data
         self.data = self.import_data()
         self.constituents = self.import_constituents()
-        if self.config['data']['bulk'] == 'True' and self.config['global_options']['small_cap_only'] == 'True':
+
+        if self.config.getboolean('data', 'bulk') and self.config.getboolean('global_options', 'small_cap_only'):
             self.tickers = set(self.data['Ticker'].unique()) - set(self.constituents['Ticker'])
-        elif self.config['data']['bulk'] == 'True' and self.config['global_options']['small_cap_only'] == 'False':
+        if self.config.getboolean('data', 'bulk') and not self.config.getboolean('global_options', 'small_cap_only'):
             self.tickers = self.data['Ticker'].unique()
         else:
             self.tickers = self.config['data']['tickers'].split(',')
@@ -491,7 +508,7 @@ class Backtester:
 
         # run the strategy
         self.cerebro = bt.Cerebro(stdstats=False, optreturn=False)
-        if self.config['global_options']['cheat_on_close'] == 'True':
+        if self.config.getboolean('global_options', 'cheat_on_close'):
             self.cerebro.broker.set_coc(True)
         self.strategy_results = self.run_strategy()
         self.returns, self.positions, self.transactions, self.gross_lev = [None] * len(self.strategy_results[0]), [
@@ -505,7 +522,7 @@ class Backtester:
             self.portfolio_stats = val.analyzers.getbyname('pyfolio')
             self.returns[idx], self.positions[idx], self.transactions[idx], self.gross_lev[idx] \
                 = self.portfolio_stats.get_pf_items()
-            if self.config['global_options']['reports'] == 'True':
+            if self.config.getboolean('global_options', 'reports'):
                 self.run_strategy_reports()
         self.portfolio_stats = self.strategy_results[0].analyzers.getbyname('pyfolio')
         self.returns, self.positions, self.transactions, self.gross_lev = self.portfolio_stats.get_pf_items()
@@ -517,7 +534,7 @@ class Backtester:
         self.benchmark_stats = self.benchmark_results[0].analyzers.getbyname('pyfolio')
         self.benchmark_returns, self.benchmark_positions, self.benchmark_transactions, \
         self.benchmark_gross_lev = self.benchmark_stats.get_pf_items()
-        if self.config['global_options']['reports'] == 'True':
+        if self.config.getboolean('global_options', 'reports'):
             self.run_benchmark_reports()
         self.benchmark_end_value = self.cerebro_benchmark.broker.getvalue()
 
