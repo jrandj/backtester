@@ -358,25 +358,6 @@ class Backtester:
         except OSError:
             pass
 
-    def find_correlation(self):
-        """TBC.
-
-        Parameters
-        ----------
-
-        Raises
-        ------
-
-        """
-        self.data = self.data.set_index('date')
-        # correlation_data = self.data.set_index('date')
-        returns_matrix = pd.DataFrame(index=self.data.index, columns=self.tickers)
-        for ticker in self.tickers:
-            ticker_data = self.data.loc[self.data['Ticker'] == ticker]
-            returns_matrix[ticker] = ticker_data['close'].pct_change()
-            print(f"Adding {ticker}")
-        correlation_matrix = returns_matrix.corr()
-
     def import_constituents(self):
         """
         Import the .csv file containing constituents at a point in time. The format is Rank,Ticker,Company,Mkt Cap.
@@ -503,8 +484,6 @@ class Backtester:
             self.tickers = self.data['Ticker'].unique()
         else:
             self.tickers = self.config['data']['tickers'].split(',')
-
-        # self.find_correlation()
 
         # run the strategy
         self.cerebro = bt.Cerebro(stdstats=False, optreturn=False)
