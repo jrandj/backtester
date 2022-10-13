@@ -12,6 +12,10 @@ class HolyGrail(bt.Strategy):
         - https://tradingstrategyguides.com/holy-grail-trading-strategy/.
 
     Attributes:
+        self.position_count: Int.
+            The number of open positions.
+        self.open_order_count: Int.
+            The number of open orders.
         self.end_date: Datetime.date.
             The end date for the strategy.
         self.start_date: Datetime.date.
@@ -58,6 +62,8 @@ class HolyGrail(bt.Strategy):
         ('ema_short_period', int(config['holygrail_strategy_options']['ema_short_period'])),
         ('bounce_off_min', float(config['holygrail_strategy_options']['bounce_off_min'])),
         ('bounce_off_max', float(config['holygrail_strategy_options']['bounce_off_max'])),
+        ('volume_period', int(config['holygrail_strategy_options']['volume_period'])),
+        ('minimum_volume', int(config['holygrail_strategy_options']['minimum_volume'])),
         ('position_limit', int(config['global_options']['position_limit'])),
         ('lag_days', int(config['holygrail_strategy_options']['lag_days'])),
         ('plot_tickers', config.getboolean('global_options', 'plot_tickers')),
@@ -68,6 +74,8 @@ class HolyGrail(bt.Strategy):
         """
         Create any indicators needed for the strategy.
         """
+        self.position_count = None
+        self.open_order_count = 0
         self.end_date = None
         self.start_date = None
         self.d_with_len = None
@@ -93,10 +101,10 @@ class HolyGrail(bt.Strategy):
                                                                               period=self.params.ema_long_period)
             self.inds[d]['ema_short'] = bt.indicators.ExponentialMovingAverage(d.close,
                                                                                period=self.params.ema_short_period)
+            self.inds[d]['volume_sma'] = bt.indicators.ExponentialMovingAverage(d.volume,
+                                                                                period=self.params.volume_period)
             self.inds[d]['ema_long_slope'] = self.inds[d]['ema_long'] - self.inds[d]['ema_long'](-1)
             self.inds[d]['ema_short_slope'] = self.inds[d]['ema_short'] - self.inds[d]['ema_short'](-1)
-            # self.inds[d]['ema_long_ROC'] = bt.indicators.ROC100(self.inds[d]['ema_long'],
-            #                                                     period=self.params.ema_short_period)
             self.inds[d]['local_max'] = bt.indicators.Highest(d.high, period=self.params.adx_period)
             self.inds[d]['local_min'] = bt.indicators.Lowest(d.low, period=self.params.adx_period)
 
@@ -109,12 +117,12 @@ class HolyGrail(bt.Strategy):
             self.local_min[d] = None
             self.waiting_days_short[d] = 0
             self.waiting_days_long[d] = 0
+            self.position_count = 0
 
             if not self.params.plot_tickers:
                 self.inds[d]['adx'].plotinfo.subplot = False
                 self.inds[d]['ema_long'].plotinfo.subplot = False
                 self.inds[d]['ema_short'].plotinfo.subplot = False
-                # self.inds[d]['ema_long_ROC'].plotinfo.subplot = False
                 self.inds[d]['local_max'].plotinfo.subplot = False
                 self.inds[d]['local_min'].plotinfo.subplot = False
 
@@ -137,56 +145,67 @@ class HolyGrail(bt.Strategy):
             log_writer = csv.writer(f)
             # add the column headers
             if not file_exists:
-                log_writer.writerow(["Date", "Event", "Trade PnL"])
+                log_writer.writerow(["Date", "Event", "Cash", "Cash %", "Equity",
+                                     "Equity %", "Positions", "Orders", "Trade PnL"])
 
-            # log an extra column for Trade PnL if it is a trade event
+            equity = self.broker.get_value() - self.broker.get_cash()
+
+            if equity != 0:
+                cash_percent = round(self.broker.get_cash() / self.broker.get_value(), 2) * 100
+            else:
+                cash_percent = 0
+            equity_percent = round(equity / self.broker.get_value(), 2) * 100
+
             if trade_event:
                 net_profit = txt.split("PnL Net ", 1)[1][:-1]
-                log_writer.writerow((dt.isoformat(), txt, net_profit))
+                log_writer.writerow((dt.isoformat(), txt, round(self.broker.get_cash(), 2), cash_percent,
+                                     round(equity, 2), equity_percent, self.position_count,
+                                     self.open_order_count, net_profit))
             else:
-                log_writer.writerow((dt.isoformat(), txt))
+                log_writer.writerow((dt.isoformat(), txt, round(self.broker.get_cash(), 2), cash_percent,
+                                     round(equity, 2), equity_percent, self.position_count,
+                                     self.open_order_count))
 
     def notify_order(self, order):
         """
         Handle orders and provide a notification from the broker based on the order.
 
         :param order: The order object.
-        :type order: Backtrader.order.BuyOrder.
+        :type order: Backtrader.order.BuyOrder or Backtrader.order.SellOrder.
         :return: NoneType.
         :rtype: NoneType.
+        :raises ValueError: If an unhandled order type occurs.
         """
         dt, dn = self.datetime.date(), order.data._name
-        if order.isbuy():
-            order_type = 'BUY'
+
+        if order.status in [order.Submitted]:
+            # self.log(f"For {dn}, {order.ordtypename()} order status is {order.getstatusname()}", dt)
+            pass
+        elif order.status in [order.Rejected]:
+            self.log(f"For {dn}, order status is {order.getstatusname()}", dt)
+        elif order.status in [order.Accepted]:
+            self.log(f"For {dn}, {order.ordtypename()} order status is {order.getstatusname()}", dt)
+            self.open_order_count += 1
+            pass
+        elif order.status in [order.Completed, order.Partial]:
+            self.log(f"For {dn}, {order.ordtypename()} order status is {order.getstatusname()} with executed_price: "
+                     f"{order.executed.price:.2f}, executed_value: {order.executed.value:.2f}, "
+                     f"created_price: {order.created.price:.2f}, and slippage (executed_price/created_price): "
+                     f"{100 * (order.executed.price / order.created.price):.2f}%", dt)
+            del self.o[order.data]
+            self.open_order_count -= 1
+        elif order.status in [order.Expired, order.Canceled, order.Margin]:
+            self.log(f"For {dn}, unexpected order status of {order.getstatusname()}", dt)
+            del self.o[order.data]
         else:
-            order_type = 'SELL'
-        executed_price = order.executed.price
-        executed_value = order.executed.value
-        executed_commission = order.executed.comm
-        created_price = order.created.price
-        created_value = order.created.value
-        created_commission = order.created.comm
-
-        self.log(
-            f"For {dn}, {order_type} executed, Status: {order.getstatusname()}, Executed Price: {executed_price:.2f}, "
-            f"Executed Value: {executed_value:.2f}, Executed Commission: {executed_commission:.2f}, "
-            f"Created Price: {created_price:.2f}", dt)
-
-        if order.status == order.Completed:
-            self.log(f"For {dn}, order completed with slippage (executed_price/created_price)"
-                     f": {100 * (executed_price / created_price):.2f}%", dt)
-
-        # allow orders again based on the status
-        if order.status in [order.Partial, order.Margin, order.Expired, order.Completed, order.Rejected]:
-            self.o[order.data] = None
-            self.log(f"For {dn}, order available again as status was {order.getstatusname()}", dt)
+            raise ValueError(f"For {dn}, unexpected order status of {order.getstatusname()}")
 
     def start(self):
         """
         Runs at the start. Calculates the date range across all tickers.
 
-        :return:
-        :rtype:
+        :return: NoneType.
+        :rtype: NoneType.
         """
         start_date = self.data.num2date(self.datas[0].datetime.array[0])
         end_date = self.data.num2date(self.datas[0].datetime.array[-1])
@@ -228,21 +247,12 @@ class HolyGrail(bt.Strategy):
         """
         dt = self.datetime.date()
 
-        position_count = 0
-        for position in self.broker.positions:
-            if self.broker.getposition(position).size > 0:
-                position_count = position_count + 1
-        cash_percent = 100 * (self.broker.get_cash() / self.broker.get_value())
-        if self.p.verbose:
-            self.log(f"Cash: {self.broker.get_cash():.2f}, "
-                     f"Equity: {self.broker.get_value() - self.broker.get_cash():.2f} "
-                     f"Cash %: {cash_percent:.2f}, Positions: {position_count}", dt)
+        # find the number of positions we already have, so we don't go over the limit
+        self.position_count = len([position for position in self.broker.positions if self.broker.getposition(
+            position).size != 0])
 
         for i, d in enumerate(self.d_with_len):
             dn = d._name
-            # self.log(f"For {dn} long slope is: {round(self.inds[d]['ema_long_slope'][0], 3)} and short slope is "
-            #          f"{round(self.inds[d]['ema_short_slope'][0], 3)}", dt)
-
             # track if we are long or short
             if self.getposition(d).size > 0:
                 self.long_days[d] = self.long_days.get(d, 0) + 1
@@ -263,6 +273,9 @@ class HolyGrail(bt.Strategy):
                 # handle buy/sell
                 elif self.getposition(d).size == 0:
                     self.handle_buy_and_sell(d, dn, dt)
+
+            else:
+                self.log(f"For {dn} unable to proceed as there is an order already", dt)
 
     def set_trailing_stops(self, d, dn, dt):
         """
@@ -378,7 +391,7 @@ class HolyGrail(bt.Strategy):
                          f"{self.inds[d]['adx'].lines.adx[0]:.2f} "
                          f"has dropped below 30", dt)
 
-        # kill the tags if it's been too long
+        # kill the tags if it has been too long
         if self.waiting_days_short[d] > self.params.lag_days:
             self.entry_point_short[d] = None
             self.log(f"For {dn} killing short condition as it has been {self.waiting_days_short[d]:.2f} "
@@ -390,8 +403,21 @@ class HolyGrail(bt.Strategy):
                      f"days with no buy trigger reached", dt)
             self.waiting_days_long[d] = 0
 
-        # adx is above 30
-        else:
+        # kill the tags if the volume SMA drops below the minimum
+        if self.inds[d]['volume_sma'][0] < self.params.minimum_volume:
+            if self.entry_point_long[d]:
+                self.entry_point_long[d] = None
+                self.log(f"For {dn} killing long condition as the volume "
+                         f"{self.inds[d]['volume_sma'][0]:.2f} sma "
+                         f"has dropped below {self.params.minimum_volume}", dt)
+            if self.entry_point_short[d]:
+                self.entry_point_short[d] = None
+                self.log(f"For {dn} killing short condition as the volume "
+                         f"{self.inds[d]['volume_sma'][0]:.2f} sma "
+                         f"has dropped below {self.params.minimum_volume}", dt)
+
+        # adx is above 30 and there is sufficient volume
+        elif self.inds[d]['adx'].lines.adx[0] > 30 and self.inds[d]['volume_sma'][0] >= self.params.minimum_volume:
             # the ema is touched from below, so we set an entry point for going short
             if abs(d.close[0] / self.inds[d]['local_min']) > self.params.bounce_off_min and d.close[0] \
                     < \
@@ -423,37 +449,53 @@ class HolyGrail(bt.Strategy):
             if d.close[0] < self.inds[d]['ema_long'][0] and self.entry_point_short[d] \
                     is not None and d.close[0] < self.entry_point_short[d]:
 
-                if self.config.getboolean('global_options', 'no_penny_stocks') and d.close[0] >= 1:
-                    self.o[d] = self.sell(data=d, exectype=bt.Order.Market)
-                    self.local_min[d] = self.inds[d]['local_min'][0]
-                    self.log(
-                        f"For {dn} selling as close {d.close[0]:.2f} has dropped below the entry point of"
-                        f" {self.entry_point_short[d]:.2f}, setting local min of {self.local_min[d]:.2f}", dt)
-                    self.entry_point_short[d] = None
-                    self.waiting_days_short[d] = 0
+                # only enter a position if we are below the limit
+                if self.position_count + self.open_order_count < self.params.position_limit - 1:
+                    if self.config.getboolean('global_options', 'no_penny_stocks') and d.close[0] >= 1:
+                        self.o[d] = self.sell(data=d, exectype=bt.Order.Market)
+                        self.local_min[d] = self.inds[d]['local_min'][0]
+                        self.log(
+                            f"For {dn} selling as close {d.close[0]:.2f} has dropped below the entry point of"
+                            f" {self.entry_point_short[d]:.2f}, setting local min of {self.local_min[d]:.2f}", dt)
+                        self.entry_point_short[d] = None
+                        self.waiting_days_short[d] = 0
+                    else:
+                        self.log(
+                            f"For {dn} did not go short as {d.close[0]:.2f} qualifies it as a penny stock", dt)
+                        self.entry_point_short[d] = None
+                        self.waiting_days_short[d] = 0
                 else:
-                    self.log(
-                        f"For {dn} did not go short as {d.close[0]:.2f} qualifies it as a penny stock", dt)
-                    self.entry_point_short[d] = None
-                    self.waiting_days_short[d] = 0
+                    self.log(f"For {dn} did not go short as we have {self.position_count} and {self.open_order_count} "
+                             f"orders already", dt)
 
             # buy as we have gone above the entry point and remain above the EMA
             if d.close[0] > self.inds[d]['ema_long'][0] and self.entry_point_long[d] \
                     is not None and d.close[0] > self.entry_point_long[d]:
 
-                if self.config.getboolean('global_options', 'no_penny_stocks') and d.close[0] >= 1:
-                    self.o[d] = self.buy(data=d, exectype=bt.Order.Market)
-                    self.local_max[d] = self.inds[d]['local_max'][0]
-                    self.log(
-                        f"For {dn} buying as close {d.close[0]:.2f} has exceeded the entry point of"
-                        f" {self.entry_point_long[d]:.2f}, setting local max of {self.local_max[d]:.2f}", dt)
-                    self.entry_point_long[d] = None
-                    self.waiting_days_long[d] = 0
+                # only enter a position if we are below the limit
+                if self.position_count + self.open_order_count < self.params.position_limit - 1:
+                    if self.config.getboolean('global_options', 'no_penny_stocks') and d.close[0] >= 1:
+                        self.o[d] = self.buy(data=d, exectype=bt.Order.Market)
+                        self.local_max[d] = self.inds[d]['local_max'][0]
+                        self.log(
+                            f"For {dn} buying as close {d.close[0]:.2f} has exceeded the entry point of"
+                            f" {self.entry_point_long[d]:.2f}, setting local max of {self.local_max[d]:.2f}", dt)
+                        self.entry_point_long[d] = None
+                        self.waiting_days_long[d] = 0
+                    else:
+                        self.log(
+                            f"For {dn} did not go long as {d.close[0]:.2f} qualifies it as a penny stock", dt)
+                        self.entry_point_long[d] = None
+                        self.waiting_days_long[d] = 0
                 else:
-                    self.log(
-                        f"For {dn} did not go long as {d.close[0]:.2f} qualifies it as a penny stock", dt)
-                    self.entry_point_long[d] = None
-                    self.waiting_days_long[d] = 0
+                    self.log(f"For {dn} did not go long as we have {self.position_count} and {self.open_order_count} "
+                             f"orders already", dt)
+
+            # there not is sufficient volume
+            elif self.inds[d]['volume_sma'][0] < self.params.minimum_volume:
+                self.log(
+                    f"For {dn} not considering entry points as volume {d.volume[0]:.2f} is lower than minimum of "
+                    f"{self.params.minimum_volume}", dt)
 
     def notify_trade(self, trade):
         """
