@@ -127,7 +127,7 @@ class HolyGrail(bt.Strategy):
                 self.inds[d]['local_min'].plotinfo.subplot = False
 
     def log(self, txt, log_type, dt, dn, order_type="N/A", order_status="N/A", net_profit=0, order_equity_p=0,
-            order_total_p=0, equity=0, cash_percent=0, equity_percent=0):
+            order_cash_p=0, order_total_p=0, order_size=0, equity=0, cash_percent=0, equity_percent=0):
         """
         The logger for the strategy.
 
@@ -146,9 +146,13 @@ class HolyGrail(bt.Strategy):
         :param net_profit: The net profit of a trade.
         :type net_profit: Float.
         :param order_equity_p: The positions value as a percentage of total equity.
-        :type order_equity_p: Float or None.
+        :type order_equity_p: Float.
+        :param order_cash_p: The positions value as a percentage of total cash.
+        :type order_cash_p: Float.
         :param order_total_p: The positions value as a percentage of the portfolio (equity plus cash).
-        :type order_total_p: Float or None.
+        :type order_total_p: Float.
+        :param order_size: The value of the order.
+        :type order_size: Float.
         :param equity: The total equity accumulated by the strategy.
         :type equity: Float.
         :param cash_percent: The cash percentage of the portfolio value.
@@ -164,14 +168,15 @@ class HolyGrail(bt.Strategy):
             log_writer = csv.writer(f)
             # add the column headers
             if not file_exists:
-                log_writer.writerow(["Date", "Ticker", "Log Type", "Details", "Order Type", "Order Status", "Trade PnL",
-                                     "Order Equity %", "Order Total %", "Portfolio Cash", "Portfolio Cash %",
-                                     "Portfolio Equity", "Portfolio Equity %", "Total Positions",
+                log_writer.writerow(["Date", "Ticker", "Log Type", "Details", "Order Type", "Order Status",
+                                     "Order Size", "Trade PnL", "Order Equity %", "Order Cash %", "Order Total %",
+                                     "Portfolio Cash", "Cash %", "Portfolio Equity", "Equity %", "Total Positions",
                                      "Total Orders"])
 
-            log_writer.writerow((dt.isoformat(), dn, log_type, txt, order_type, order_status, net_profit,
-                                 order_equity_p, order_total_p, round(self.broker.get_cash(), 2), cash_percent,
-                                 round(equity, 2), equity_percent, self.position_count, self.open_order_count))
+            log_writer.writerow((dt.isoformat(), dn, log_type, txt, order_type, order_status, order_size, net_profit,
+                                 order_equity_p, order_cash_p, order_total_p, round(self.broker.get_cash(), 2),
+                                 cash_percent, round(equity, 2), equity_percent, self.position_count,
+                                 self.open_order_count))
 
     def notify_order(self, order):
         """
@@ -193,23 +198,25 @@ class HolyGrail(bt.Strategy):
         dt, dn = self.datetime.date(), order.data._name
 
         if order.status in [order.Submitted, order.Rejected]:
-            self.log("N/A", "Order", dt, dn, order.ordtypename(), order.getstatusname(), 0, 0,
-                     0, equity, cash_percent, equity_percent)
-            pass
+            # self.log("N/A", "Order", dt, dn, order.ordtypename(), order.getstatusname(), 0, 0,
+            #          0, equity, cash_percent, equity_percent)
+            self.log("N/A", "Order", dt, dn, order.ordtypename(), order.getstatusname())
         elif order.status in [order.Accepted]:
-            self.log("N/A", "Order", dt, dn, order.ordtypename(), order.getstatusname(), 0, 0,
-                     0, equity, cash_percent, equity_percent)
+            # self.log("N/A", "Order", dt, dn, order.ordtypename(), order.getstatusname(), 0, 0,
+            #          0, equity, cash_percent, equity_percent)
+            self.log("N/A", "Order", dt, dn, order.ordtypename(), order.getstatusname())
             self.open_order_count += 1
-            pass
         elif order.status in [order.Completed, order.Partial]:
             if equity == 0:
                 order_equity_p = 100
             else:
                 order_equity_p = round(100 * (order.executed.value / equity), 2)
             order_total_p = round(100 * (order.executed.value / self.broker.get_value()), 2)
-            self.log(f"slippage (executed_price/created_price): "
+            order_cash_p = round(100 * (order.executed.value / self.broker.get_cash()), 2)
+            self.log(f"Slippage (executed_price/created_price): "
                      f"{100 * (order.executed.price / order.created.price):.2f}%", "Order", dt, dn, order.ordtypename(),
-                     order.getstatusname(), 0, order_equity_p, order_total_p, equity, cash_percent, equity_percent)
+                     order.getstatusname(), 0, order_equity_p, order_cash_p, order_total_p,
+                     round(order.executed.value, 2), equity, cash_percent, equity_percent)
             del self.o[order.data]
             self.open_order_count -= 1
         elif order.status in [order.Expired, order.Canceled, order.Margin]:
@@ -296,7 +303,6 @@ class HolyGrail(bt.Strategy):
             else:
                 self.log("Unable to proceed as there is an order already", "Strategy", dt, dn, "N/A", 0, 0, 0,
                          0, 0, 0)
-                pass
 
     def set_trailing_stops(self, d, dn, dt):
         """
@@ -484,8 +490,8 @@ class HolyGrail(bt.Strategy):
                         self.entry_point_short[d] = None
                         self.waiting_days_short[d] = 0
                 else:
-                    self.log(f"Did not go short as we have {self.position_count} and {self.open_order_count} orders "
-                             f"already", "Strategy", dt, dn, "N/A")
+                    self.log(f"Did not go short as we have {self.position_count} positions and {self.open_order_count} "
+                             f"orders already", "Strategy", dt, dn, "N/A")
 
             # buy as we have gone above the entry point and remain above the EMA
             if d.close[0] > self.inds[d]['ema_long'][0] and self.entry_point_long[d] \
@@ -507,8 +513,8 @@ class HolyGrail(bt.Strategy):
                         self.entry_point_long[d] = None
                         self.waiting_days_long[d] = 0
                 else:
-                    self.log(f"Did not go long as we have {self.position_count} and {self.open_order_count} orders "
-                             f"already", "Strategy", dt, dn, "N/A")
+                    self.log(f"Did not go long as we have {self.position_count} positions and {self.open_order_count} "
+                             f"orders already", "Strategy", dt, dn, "N/A")
 
             # there not is sufficient volume
             elif self.inds[d]['volume_sma'][0] < self.params.minimum_volume:
@@ -528,7 +534,7 @@ class HolyGrail(bt.Strategy):
         if trade.isclosed:
             self.log(f"Position opened on {trade.open_datetime().date()} and closed on {trade.close_datetime().date()} "
                      f"at price {trade.price:.2f} on {trade.close_datetime().date()}", "Trade", dt, trade.data._name,
-                     f"N/A", round(trade.pnlcomm, 2))
+                     f"N/A", "N/A", round(trade.pnlcomm, 2))
 
     def stop(self):
         """
