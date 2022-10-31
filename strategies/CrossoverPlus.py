@@ -71,6 +71,16 @@ class CrossoverPlus(bt.Strategy):
                 self.inds[d]['RSI'].plotinfo.subplot = False
                 self.inds[d]['PPO'].plotinfo.subplot = False
 
+    def track_daily_stats(self):
+        """
+        Log the daily stats for the strategy.
+
+        :return: NoneType.
+        :rtype: NoneType.
+        """
+        utils.track_daily_stats(self.datetime.date(), self.broker.get_value(), self.broker.get_cash(),
+                                self.p.verbose, self.p.log_file, self.position_count, self.open_order_count)
+
     def notify_order(self, order):
         """
         Handle orders and provide a notification from the broker based on the order.
@@ -115,6 +125,7 @@ class CrossoverPlus(bt.Strategy):
         # find the number of positions we already have, so we don't go over the limit
         self.position_count = len([position for position in self.broker.positions if self.broker.getposition(
             position).size != 0])
+        self.track_daily_stats()
 
         for i, d in enumerate(self.d_with_len):
             dn = d._name

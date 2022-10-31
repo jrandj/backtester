@@ -66,6 +66,16 @@ class Crossover(bt.Strategy):
                 self.inds[d]['sma2'].plotinfo.subplot = False
                 self.inds[d]['cross'].plotinfo.subplot = False
 
+    def track_daily_stats(self):
+        """
+        Log the daily stats for the strategy.
+
+        :return: NoneType.
+        :rtype: NoneType.
+        """
+        utils.track_daily_stats(self.datetime.date(), self.broker.get_value(), self.broker.get_cash(),
+                                self.p.verbose, self.p.log_file, self.position_count, self.open_order_count)
+
     def notify_order(self, order):
         """
         Handle orders and provide a notification from the broker based on the order.
@@ -111,6 +121,7 @@ class Crossover(bt.Strategy):
         # find the number of positions we already have, so we don't go over the limit
         self.position_count = len([position for position in self.broker.positions if self.broker.getposition(
             position).size != 0])
+        self.track_daily_stats()
 
         for i, d in enumerate(self.d_with_len):
             dn = d._name
@@ -119,45 +130,44 @@ class Crossover(bt.Strategy):
             if not self.o.get(d, None):
                 # buy signal
                 if self.inds[d]['cross'] == 1:
-                    if self.position_count <= self.params.position_limit:
-                        # we are short currently
-                        if self.getposition(d).size < 0:
-                            # close short position and open long position
-                            self.o[d] = self.close(data=d, exectype=bt.Order.Market)
+                    # we are short currently
+                    if self.getposition(d).size < 0:
+                        # close short position and open long position
+                        self.o[d] = self.close(data=d, exectype=bt.Order.Market)
+                        if self.position_count <= self.params.position_limit:
                             self.o[d] = self.buy(data=d, exectype=bt.Order.Market)
-                        # we are long currently so no action is required
-                        elif self.getposition(d).size > 0:
-                            utils.log(self.p.verbose, self.p.log_file, f"Cannot action buy signal for {dn} as I am "
-                                                                       f"long already", "Strategy", dt, dn,
-                                      self.position_count, self.open_order_count)
-                        # there is no open position
                         else:
-                            self.o[d] = self.buy(data=d, exectype=bt.Order.Market)
+                            utils.log(self.p.verbose, self.p.log_file, f"Cannot action buy signal for {dn} as I have"
+                                                                       f" {self.position_count} positions already",
+                                      "Strategy", dt, dn, self.position_count, self.open_order_count)
+                    # we are long currently so no action is required
+                    elif self.getposition(d).size > 0:
+                        utils.log(self.p.verbose, self.p.log_file, f"Cannot action buy signal for {dn} as I am "
+                                                                   f"long already", "Strategy", dt, dn,
+                                  self.position_count, self.open_order_count)
+                    # there is no open position
                     else:
-                        utils.log(self.p.verbose, self.p.log_file, f"Cannot action buy signal for {dn} as I have"
-                                                                   f" {self.position_count} positions already",
-                                  "Strategy", dt, dn, self.position_count, self.open_order_count)
+                        self.o[d] = self.buy(data=d, exectype=bt.Order.Market)
 
                 # sell signal
                 elif self.inds[d]['cross'] == -1:
-                    if self.position_count <= self.params.position_limit:
-                        # we are short currently so no action is required
-                        if self.getposition(d).size < 0:
-                            utils.log(self.p.verbose, self.p.log_file, f"Cannot action sell signal for {dn} as I am "
-                                                                       f"short already", "Strategy", dt, dn,
-                                      self.position_count, self.open_order_count)
-                        # we are long currently
-                        elif self.getposition(d).size > 0:
-                            # close long position and open short position
-                            self.o[d] = self.close(data=d, exectype=bt.Order.Market)
+                    if self.getposition(d).size < 0:
+                        utils.log(self.p.verbose, self.p.log_file, f"Cannot action sell signal for {dn} as I am "
+                                                                   f"short already", "Strategy", dt, dn,
+                                  self.position_count, self.open_order_count)
+                    # we are long currently
+                    elif self.getposition(d).size > 0:
+                        # close long position and open short position
+                        self.o[d] = self.close(data=d, exectype=bt.Order.Market)
+                        if self.position_count <= self.params.position_limit:
                             self.o[d] = self.sell(data=d, exectype=bt.Order.Market)
-                        # there is no open position
                         else:
-                            self.o[d] = self.sell(data=d, exectype=bt.Order.Market)
+                            utils.log(self.p.verbose, self.p.log_file,
+                                      f"Cannot action sell signal for {dn} as I have {self.position_count} positions "
+                                      f"already", "Strategy", dt, dn, self.position_count, self.open_order_count)
+                    # there is no open position
                     else:
-                        utils.log(self.p.verbose, self.p.log_file,
-                                  f"Cannot action sell signal for {dn} as I have {self.position_count} positions "
-                                  f"already", "Strategy", dt, dn, self.position_count, self.open_order_count)
+                        self.o[d] = self.sell(data=d, exectype=bt.Order.Market)
 
     def notify_trade(self, trade):
         """

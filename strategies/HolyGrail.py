@@ -177,8 +177,8 @@ class HolyGrail(bt.Strategy):
         # find the number of positions we already have, so we don't go over the limit
         self.position_count = len([position for position in self.broker.positions if self.broker.getposition(
             position).size != 0])
-
         self.track_daily_stats()
+
         for i, d in enumerate(self.d_with_len):
             dn = d._name
             # track if we are long or short
