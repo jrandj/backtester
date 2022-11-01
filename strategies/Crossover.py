@@ -9,30 +9,20 @@ class Crossover(bt.Strategy):
     A class that contains the trading strategy.
 
     Attributes:
-        self.cagr: Float.
-            The Compound Annual Growth Rate (CAGR) for the strategy.
         config: Configparser.RawConfigParser.
             The object that will read configuration from the configuration file.
         d_with_len: List.
             The subset of data that is guaranteed to be available.
-        elapsed_days: Int.
-            The amount of days between the start and end date.
-        end_date: Datetime.Date.
-            The ending date of the strategy.
-        end_val: Float.
-            The ending value of the strategy.
         inds: Dict.
             The indicators for all tickers.
         o: Dict.
             The orders for all tickers.
+        open_order_count: Int.
+            The number of open orders.
         params: Tuple.
             Parameters for the strategy.
-        start_date: Datetime.Date.
-            The starting date of the strategy.
-        start_val: Float.
-            The starting value of the strategy.
-        trade_count: Int.
-            The total number of trades executed by the strategy.
+        position_count: Int.
+            The number of open positions.
     """
     config = configparser.RawConfigParser()
     config.read('config.properties')
@@ -87,7 +77,8 @@ class Crossover(bt.Strategy):
         :raises ValueError: If an unhandled order type occurs.
         """
         self.open_order_count = utils.notify_order(self.datetime.date(), order.data._name, self.broker.get_value(),
-                                 self.broker.get_cash(), self.p.log_file, self.p.verbose, order, self.o,
+                                                   self.broker.get_cash(), self.p.log_file, self.p.verbose, order,
+                                                   self.o,
                                                    self.position_count, self.open_order_count)
 
     def nextstart(self):

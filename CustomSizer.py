@@ -7,6 +7,12 @@ import math
 class CustomSizer(bt.Sizer):
     """
     A class that contains the logic for the order sizing.
+
+    Attributes:
+        config: Configparser.RawConfigParser.
+            The object that will read configuration from the configuration file.
+        params: Tuple.
+            Parameters for the strategy.
     """
     config = configparser.RawConfigParser()
     config.read('config.properties')

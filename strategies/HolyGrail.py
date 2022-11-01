@@ -10,44 +10,42 @@ class HolyGrail(bt.Strategy):
         - https://tradingstrategyguides.com/holy-grail-trading-strategy/.
 
     Attributes:
-        self.position_count: Int.
-            The number of open positions.
-        self.open_order_count: Int.
-            The number of open orders.
-        self.end_date: Datetime.date.
-            The end date for the strategy.
-        self.start_date: Datetime.date.
-            The start date for the strategy.
-        self.d_with_len: List[TickerData.TickerData].
+        config: Configparser.RawConfigParser.
+            The object that will read configuration from the configuration file.
+        d_with_len: List[TickerData.TickerData].
             The list of ticker data.
-        self.cagr: Float.
-            The Compound Annual Growth Rate of the strategy.
-        self.o: Dict.
-            The orders.
-        self.inds = Dict.
-            The indicator.
-        self.entry_point_long = Dict.
+        entry_point_long: Dict.
             The entry points for long positions.
-        self.stop_loss_long = Dict.
-            The stop losses for long positions.
-        self.entry_point_short = Dict.
+        entry_point_short: Dict.
             The entry points for short positions.
-        self.stop_loss_short = Dict.
-            The stop losses for short positions.
-        self.trailing_stop = Dict.
-            The trailing stops.
-        self.local_max = Dict.
+        inds: Dict.
+            The indicator.
+        local_max: Dict.
             The local maxima.
-        self.local_min = Dict.
+        local_min: Dict.
             The local minima.
-        self.short_days = Dict.
-            The number of days that a short position is held.
-        self.long_days = Dict.
+        long_days: Dict.
             The number of days that a long position is held.
-        self.waiting_days_short = Dict.
-            The number of days waiting to go short once we have considered it.
-        self.waiting_days_long = Dict.
+        o: Dict.
+            The orders.
+        open_order_count: Int.
+            The number of open orders.
+        params: Tuple.
+            Parameters for the strategy.
+        position_count: Int.
+            The number of open positions.
+        short_days: Dict.
+            The number of days that a short position is held.
+        stop_loss_long: Dict.
+            The stop losses for long positions.
+        stop_loss_short: Dict.
+            The stop losses for short positions.
+        trailing_stop: Dict.
+            The trailing stops.
+        waiting_days_long: Dict.
             The number of days waiting to go long once we have considered it.
+        waiting_days_short: Dict.
+            The number of days waiting to go short once we have considered it.
     """
     config = configparser.RawConfigParser()
     config.read('config.properties')
@@ -74,10 +72,7 @@ class HolyGrail(bt.Strategy):
         """
         self.position_count = 0
         self.open_order_count = 0
-        self.end_date = None
-        self.start_date = None
         self.d_with_len = None
-        self.cagr = None
         self.o = dict()
         self.inds = dict()
         self.entry_point_long = dict()
@@ -134,8 +129,8 @@ class HolyGrail(bt.Strategy):
         :raises ValueError: If an unhandled order type occurs.
         """
         self.open_order_count = utils.notify_order(self.datetime.date(), order.data._name, self.broker.get_value(),
-                                 self.broker.get_cash(), self.p.log_file, self.p.verbose, order, self.o,
-                                                   self.position_count, self.open_order_count)
+                                                   self.broker.get_cash(), self.p.log_file, self.p.verbose, order,
+                                                   self.o, self.position_count, self.open_order_count)
 
     def nextstart(self):
         """

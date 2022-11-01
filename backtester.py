@@ -29,10 +29,8 @@ class Backtester:
     A class that wraps the Backtrader framework.
 
     Attributes:
-        asx300_constituents: Pandas.Core.Frame.DataFrame.
-            The dataframe containing tickers of ASX300 stocks at a point in time.
-        benchmark_data: Pandas.Core.Frame.DataFrame.
-            The dataframe containing the benchmark OHCLV data.
+        benchmark_cagr: Float.
+            The Compound Annual Growth Rate (CAGR) of the benchmark strategy.
         benchmark_end_value: Float.
             The final portfolio value for the benchmark.
         benchmark_gross_lev: Pandas.Core.Series.Series.
@@ -55,8 +53,12 @@ class Backtester:
             The broker commissions.
         config: configparser.RawConfigParser.
             The object that will read configuration from the configuration file.
+        constituents: Pandas.Core.Frame.DataFrame.
+            The dataframe containing tickers of index constituents (e.g. ASX300) stocks at a point in time.
         data: Pandas.Core.Frame.DataFrame.
             The dataframe containing all OHCLV ticker data.
+        end_date: Datetime.Date.
+            The latest date in the data.
         end_value: Float.
             The final portfolio value for the strategy.
         gross_lev: Pandas.Core.Series.Series.
@@ -67,12 +69,20 @@ class Backtester:
             A dataframe containing the daily cash and stock positions for the strategy.
         returns: Pandas.Core.Series.Series.
             The returns for the strategy.
+        start_date: Datetime.Date.
+            The earliest date in the data.
+        strategy: Str.
+            The name of the strategy being tested.
+        strategy_cagr: Float.
+            The Compound Annual Growth Rate (CAGR) of the strategy.
         strategy_results: List.
             The results for the strategy.
         tickers: List.
             The tickers for the strategy (if not in bulk mode).
         transactions: Pandas.Core.Frame.DataFrame.
             A dataframe containing the transactions for the strategy.
+        verbose: Bool.
+            True if the detailed logging is required, and False otherwise.
     """
 
     @staticmethod
@@ -91,7 +101,7 @@ class Backtester:
         return time
 
     @staticmethod
-    def global_settings():
+    def apply_global_settings():
         """
         Apply global settings.
 
@@ -420,7 +430,7 @@ class Backtester:
         self.start_date = None
         self.config = configparser.RawConfigParser()
         self.config.read('config.properties')
-        self.global_settings()
+        self.apply_global_settings()
         self.verbose = verbose
         self.comminfo = CustomCommissionScheme()
         self.clean_logs()

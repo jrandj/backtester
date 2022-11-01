@@ -4,6 +4,10 @@ import backtrader as bt
 class CustomCommissionScheme(bt.CommInfoBase):
     """
     A class that sets the commission for the broker.
+
+    Attributes:
+        params: Tuple.
+            Parameters for the strategy.
     """
 
     # parameters for the commission scheme

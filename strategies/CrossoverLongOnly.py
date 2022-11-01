@@ -9,34 +9,29 @@ class CrossoverLongOnly(bt.Strategy):
     This strategy uses 2 ETFs to represent long and short positions. Requires that data.bulk is set to False,
     and data.tickers=long_ETF,short_ETF.
 
-    Attributes
-    ----------
-    cagr: Float.
-        The Compound Annual Growth Rate (CAGR) for the strategy.
-    config: Configparser.RawConfigParser.
-        The object that will read configuration from the configuration file.
-    d_with_len: List.
-        The subset of data that is guaranteed to be available.
-    elapsed_days: Int.
-        The amount of days between the start and end date.
-    start_date: Datetime.Date.
-        The starting date of the strategy.
-    end_date: Datetime.Date.
-        The ending date of the strategy.
-    end_val: Float.
-        The ending value of the strategy.
-    inds: Dict.
-        The indicators for all tickers.
-    o: Dict.
-        The orders for all tickers.
-    params: Tuple.
-        Parameters for the strategy.
-    start_val: Float.
-        The starting value of the strategy.
-    ready_to_buy_short: Bool.
-        A flag used to track when we can open a short position.
-    ready_to_buy_long: Bool.
-        A flag used to track when we can open a long position.
+    Attributes:
+        config: Configparser.RawConfigParser.
+            The object that will read configuration from the configuration file.
+        d_with_len: List.
+            The subset of data that is guaranteed to be available.
+        end_date: Datetime.Date.
+            The ending date of the strategy.
+        inds: Dict.
+            The indicators for all tickers.
+        o: Dict.
+            The orders for all tickers.
+        open_order_count: Int.
+            The number of open orders.
+        params: Tuple.
+            Parameters for the strategy.
+        position_count: Int.
+            The number of open positions.
+        ready_to_buy_long: Bool.
+            A flag used to track when we can open a long position.
+        ready_to_buy_short: Bool.
+            A flag used to track when we can open a short position.
+        start_date: Datetime.Date.
+            The starting date of the strategy.
     """
     config = configparser.RawConfigParser()
     config.read('config.properties')
@@ -93,8 +88,8 @@ class CrossoverLongOnly(bt.Strategy):
         :raises ValueError: If an unhandled order type occurs.
         """
         self.open_order_count = utils.notify_order(self.datetime.date(), order.data._name, self.broker.get_value(),
-                                 self.broker.get_cash(), self.p.log_file, self.p.verbose, order, self.o,
-                                                   self.position_count, self.open_order_count)
+                                                   self.broker.get_cash(), self.p.log_file, self.p.verbose, order,
+                                                   self.o, self.position_count, self.open_order_count)
 
     def start(self):
         """
