@@ -209,8 +209,10 @@ class Backtester:
         self.cerebro_benchmark.addstrategy(Benchmark, verbose=False, log_file='out/benchmark_log.csv')
         print(f"Running benchmark...")
         results = self.cerebro_benchmark.run()  # runonce=False
-        if self.config.getboolean('global_options', 'plot_benchmark'):
-            self.cerebro_benchmark.plot(volume=False)
+        if self.config.getboolean('global_options', 'plot_enabled') and \
+                self.config.getboolean('global_options', 'plot_benchmark'):
+            self.cerebro_benchmark.plot(volume=self.config.getboolean('global_options', 'plot_volume'),
+                                        style='candlestick', iplot=False)
         return results
 
     def run_strategy(self):
