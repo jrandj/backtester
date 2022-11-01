@@ -129,12 +129,13 @@ class HolyGrail(bt.Strategy):
 
         :param order: The order object.
         :type order: Backtrader.order.BuyOrder or Backtrader.order.SellOrder.
-        :return: NoneType.
-        :rtype: NoneType.
+        :return: The open order count.
+        :rtype: Int.
         :raises ValueError: If an unhandled order type occurs.
         """
-        utils.notify_order(self.datetime.date(), order.data._name, self.broker.get_value(), self.broker.get_cash(),
-                           self.p.log_file, self.p.verbose, order, self.o, self.position_count, self.open_order_count)
+        self.open_order_count = utils.notify_order(self.datetime.date(), order.data._name, self.broker.get_value(),
+                                 self.broker.get_cash(), self.p.log_file, self.p.verbose, order, self.o,
+                                                   self.position_count, self.open_order_count)
 
     def nextstart(self):
         """

@@ -195,3 +195,4 @@ def notify_order(dt, dn, value, cash, log_file, verbose, order, o, position_coun
         o.pop(order.data, None)
     else:
         raise ValueError(f"For {dn}, unexpected order status of {order.getstatusname()}")
+    return open_order_count
