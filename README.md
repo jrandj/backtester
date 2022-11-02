@@ -66,19 +66,19 @@ The table below summarises the results for the strategies.
 | Benchmark         | XJO   | 29/05/1992 | 04/05/2018 | 1         | 100%          | 5.04%  | 0.4          | -0.34 | 5.23     | -53.93%          | 8.18%                  | 4.78            |
 
 The terms are defined:
-	* **Strategy:** The name of the strategy to be tested. Corresponds to a strateg implementation in the strategies folder.
-	* **Asset:** The universe of assets.
-	* **Start Date:** The earliest date in the dataset.
-	* **End Date:** The latest date in the dataset.
-	* **Positions:** The number of positions that can be held by the strategy.
-	* **Position Size:** The percentage of the total portfolio to be used when entering a position.
-	* **CAGR:** Compound Annual Growth Rate.
-	* **Sharpe Ratio:** A measure of the excess returns compared to the volatility. Ratios above 1 are generally considered good.
-	* **Skew:** A measure of the distortion of symmetrical distribution or assymetry in the results. A positive skew indicates the tail of a distribution curve is longer on the right side, and vice-versa for a negative skew.
-	* **Kurtosis:** A measure of extreme values in either tail. A high kurtosis implies an occasional extreme return.
-	* **Maximum Drawdown:** The maximum observed loss from peak to trough of a portfolio.
-	* **Maximum Monthly Return:** The largest return in any month.
-	* **Recovery Factor:** The absolute value of the returns divided by the Maximum Drawdown. Indicates a strategies ability to overcome a drawdown.
+* **Strategy:** The name of the strategy to be tested. Corresponds to a strategy implementation in the strategies folder.
+* **Asset:** The universe of assets.
+* **Start Date:** The earliest date in the dataset.
+* **End Date:** The latest date in the dataset.
+* **Positions:** The number of positions that can be held by the strategy.
+* **Position Size:** The percentage of the total portfolio to be used when entering a position.
+* **CAGR:** Compound Annual Growth Rate.
+* **Sharpe Ratio:** A measure of the excess returns compared to the volatility. Ratios above 1 are generally considered good.
+* **Skew:** A measure of the distortion of symmetrical distribution or asymmetry in the results. A positive skew indicates the tail of a distribution curve is longer on the right side, and vice-versa for a negative skew.
+* **Kurtosis:** A measure of extreme values in either tail. A high kurtosis implies an occasional extreme return.
+* **Maximum Drawdown:** The maximum observed loss from peak to trough of a portfolio.
+* **Maximum Monthly Return:** The largest return in any month.
+* **Recovery Factor:** The absolute value of the returns divided by the Maximum Drawdown. Indicates a strategies ability to overcome a drawdown.
 
 ### Assumptions
 The following assumptions or decisions have been made:
@@ -99,7 +99,7 @@ An implementation of a 50-day and 200-day moving average crossover strategy prov
 </p>
 
 #### CrossoverPlus
-An implementation of a strategy using 50-day and 200-day moving averages, the Percent Price Oscillator (PPO) indicator, and the Relative Strength Index (RSI) indicator is available in [CrossoverPlus](/strategies/CrossoverStrategyPlus.py).
+An implementation of a strategy using 50-day and 200-day moving averages, the Percent Price Oscillator (PPO) indicator, and the Relative Strength Index (RSI) indicator is available in [CrossoverPlus](/strategies/CrossoverPlus.py).
 
 <p align="center">
 	<img src="/res/CrossoverPlus.png" width="600" height="350">
@@ -113,7 +113,7 @@ An implementation of a 50-day and 200-day moving average crossover strategy prov
 </p>
 
 #### Pump
-An implementation of a strategy attempting to detect "pump and dump" schemes based on large volume, small price changes, and local price maxima is available in [Pump](/strategies/PumpStrategy.py). This implementation is long only.
+An implementation of a strategy attempting to detect "pump and dump" schemes based on large volume, small price changes, and local price maxima is available in [Pump](/strategies/Pump.py). This implementation is long only.
 
 <p align="center">
 	<img src="/res/Pump.png" width="600" height="350">
@@ -127,6 +127,11 @@ An implementation of a strategy attempting to detect "pump and dump" schemes bas
 </p>
 
 #### Benchmark
+The benchmark strategy buys and holds the asset in `data/benchmark` (XJO in the examples above). This strategy is available in [Benchmark](/strategies/Benchmark.py).
+
+<p align="center">
+	<img src="/res/Benchmark.png" width="600" height="350">
+</p>
 
 ## Getting Started
 
